@@ -1,0 +1,5 @@
+{
+  "name": "BetDuel - 1v1 & Team-Based Wager Platform",
+  "description": "BetDuel is a skill-based wagering platform for competitive gamers. The app supports both 1v1 duels and team-based matches for popular games, running on an internal credits system.",
+  "requestFramePermissions": []
+}
