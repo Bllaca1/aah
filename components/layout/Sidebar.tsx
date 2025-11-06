@@ -12,7 +12,7 @@ const NavItem: React.FC<{ to: string; icon: React.ReactNode; label: string; onCl
       `flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-colors duration-200 ${
         isActive
           ? 'bg-brand-primary text-white'
-          : 'text-gray-400 hover:bg-gray-700 hover:text-white'
+          : 'text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-700 hover:text-gray-900 dark:hover:text-white'
       }`
     }
   >
@@ -28,7 +28,7 @@ const SidebarContent: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick })
             <div>
                 <div className="flex items-center mb-10 px-2">
                 <Swords className="h-8 w-8 text-brand-primary" />
-                <h1 className="text-2xl font-bold text-white ml-2">BetDuel</h1>
+                <h1 className="text-2xl font-bold text-gray-900 dark:text-white ml-2">BetDuel</h1>
                 </div>
                 <nav className="space-y-2">
                 <NavItem to="/dashboard" icon={<LayoutDashboard className="h-5 w-5" />} label="Dashboard" onClick={onLinkClick} />
@@ -39,7 +39,7 @@ const SidebarContent: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick })
                 <NavItem to="/profile" icon={<UserCircle className="h-5 w-5" />} label="Profile" onClick={onLinkClick} />
                 <NavItem to="/wallet" icon={<Wallet className="h-5 w-5" />} label="Wallet" onClick={onLinkClick} />
                 {user?.role === UserRole.ADMIN && (
-                    <div className="pt-4 mt-4 border-t border-gray-700">
+                    <div className="pt-4 mt-4 border-t border-gray-300 dark:border-gray-700">
                     <NavItem to="/admin/disputes" icon={<ShieldAlert className="h-5 w-5" />} label="Disputes" onClick={onLinkClick} />
                     </div>
                 )}
@@ -63,7 +63,7 @@ function Sidebar({ isMobileOpen, setMobileOpen }: SidebarProps) {
   return (
     <>
       {/* Desktop Sidebar */}
-      <aside className="w-64 flex-shrink-0 bg-gray-800 p-4 hidden md:flex md:flex-col justify-between">
+      <aside className="w-64 flex-shrink-0 bg-white dark:bg-gray-800 p-4 hidden md:flex md:flex-col justify-between border-r border-gray-200 dark:border-transparent">
         <SidebarContent />
       </aside>
 
@@ -78,13 +78,13 @@ function Sidebar({ isMobileOpen, setMobileOpen }: SidebarProps) {
         
         {/* Sidebar Panel */}
         <aside 
-            className={`fixed top-0 left-0 bottom-0 flex flex-col justify-between w-64 bg-gray-800 p-4 z-50 transform transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
+            className={`fixed top-0 left-0 bottom-0 flex flex-col justify-between w-64 bg-white dark:bg-gray-800 p-4 z-50 transform transition-transform duration-300 ease-in-out ${isMobileOpen ? 'translate-x-0' : '-translate-x-full'}`}
             role="dialog"
             aria-modal="true"
             aria-labelledby="sidebar-title"
         >
             <div className="absolute top-2 right-2">
-                <button onClick={handleClose} className="p-2 text-gray-400 hover:text-white">
+                <button onClick={handleClose} className="p-2 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
                     <span className="sr-only">Close menu</span>
                     <X className="h-6 w-6" />
                 </button>

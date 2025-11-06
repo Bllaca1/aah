@@ -3,6 +3,8 @@ import { Bell, PlusCircle, LogOut, Menu } from 'lucide-react';
 import { useAppContext } from '../../hooks/useAppContext';
 import { useNavigate } from 'react-router-dom';
 import NotificationsDropdown from '../notifications/NotificationsDropdown';
+import ThemeToggle from './ThemeToggle';
+import PartyControls from './PartyControls';
 
 interface HeaderProps {
   onMobileMenuClick: () => void;
@@ -30,31 +32,36 @@ function Header({ onMobileMenuClick }: HeaderProps) {
 
   if (!user) return null;
 
+  // FIX: The `reduce` callback now correctly sums ELO values and avoids division by zero.
+  const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
+
   return (
-    <header className="flex-shrink-0 bg-gray-800 border-b border-gray-700">
+    <header className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
       <div className="flex items-center justify-between p-4">
         <div className="md:hidden">
-          <button onClick={onMobileMenuClick} className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-700" aria-label="Open menu">
+          <button onClick={onMobileMenuClick} className="p-2 rounded-md text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Open menu">
             <Menu className="h-6 w-6" />
           </button>
         </div>
         <div/>
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+           <PartyControls />
            <button 
             onClick={() => navigate('/wallet')}
-            className="flex items-center space-x-2 bg-gray-700 hover:bg-brand-primary text-white font-semibold py-2 px-4 border border-gray-600 rounded-lg shadow transition-all duration-200"
+            className="flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 hover:bg-brand-primary text-gray-800 dark:text-white hover:text-white font-semibold py-2 px-3 sm:px-4 border border-gray-300 dark:border-gray-600 rounded-lg shadow transition-all duration-200"
           >
-            <span className="font-mono text-green-400">{user.credits.toFixed(2)} C</span>
-            <PlusCircle className="h-5 w-5 text-gray-300" />
+            <span className="font-mono text-green-500 dark:text-green-400">{user.credits.toFixed(2)}<span className="hidden sm:inline"> C</span></span>
+            <PlusCircle className="h-5 w-5 text-gray-500 dark:text-gray-300" />
           </button>
+          <ThemeToggle />
           <div className="relative" ref={dropdownRef}>
             <button 
               onClick={() => setDropdownOpen(prev => !prev)}
-              className="p-2 rounded-full hover:bg-gray-700 relative"
+              className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 relative"
             >
-              <Bell className="h-6 w-6 text-gray-400" />
+              <Bell className="h-6 w-6 text-gray-500 dark:text-gray-400" />
               {unreadCount > 0 && (
-                <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-red-500 text-white text-[10px] ring-2 ring-gray-800 flex items-center justify-center">
+                <span className="absolute top-0 right-0 block h-4 w-4 rounded-full bg-red-500 text-white text-[10px] ring-2 ring-white dark:ring-gray-800 flex items-center justify-center">
                   {unreadCount}
                 </span>
               )}
@@ -68,11 +75,11 @@ function Header({ onMobileMenuClick }: HeaderProps) {
               alt={user.username}
             />
             <div className="ml-3 hidden md:block">
-              <p className="text-sm font-medium text-white">{user.username}</p>
-              <p className="text-xs text-gray-400">ELO: {user.elo}</p>
+              <p className="text-sm font-medium text-gray-900 dark:text-white">{user.username}</p>
+              <p className="text-xs text-gray-500 dark:text-gray-400">ELO: {overallElo}</p>
             </div>
-            <button onClick={logout} className="p-2 rounded-full hover:bg-gray-700 ml-2" title="Log Out">
-              <LogOut className="h-5 w-5 text-gray-400" />
+            <button onClick={logout} className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 ml-2" title="Log Out">
+              <LogOut className="h-5 w-5 text-gray-500 dark:text-gray-400" />
             </button>
           </div>
         </div>

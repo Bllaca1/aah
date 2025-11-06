@@ -3,76 +3,13 @@ import { Link } from 'react-router-dom';
 import Card from '../components/ui/Card';
 import Button from '../components/ui/Button';
 import { useAppContext } from '../hooks/useAppContext';
-import { Shield, Crown, UserPlus, LogOut, Trash2, ShieldX } from 'lucide-react';
+import { Shield, Crown, UserPlus, LogOut, Trash2, ShieldX, ShieldCheck } from 'lucide-react';
 import type { Team, User, Match } from '../types';
 import { MatchStatus } from '../types';
 import PresenceIndicator from '../components/ui/PresenceIndicator';
 import InviteFriendsModal from '../components/teams/InviteFriendsModal';
 import Modal from '../components/ui/Modal';
-
-
-const CreateTeamForm: React.FC = () => {
-    const { createTeam } = useAppContext();
-    const [name, setName] = useState('');
-    const [tag, setTag] = useState('');
-    const [avatarUrl, setAvatarUrl] = useState('');
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if(name.trim() && tag.trim()) {
-            createTeam({ name: name.trim(), tag: tag.trim().toUpperCase(), avatarUrl: avatarUrl.trim() });
-        }
-    };
-
-    return (
-        <Card>
-            <div className="text-center">
-                <Shield className="h-16 w-16 mx-auto text-gray-500 mb-4" />
-                <h1 className="text-3xl font-bold text-white">Create Your Team</h1>
-                <p className="text-gray-400 mt-2">Assemble your squad and start competing together.</p>
-            </div>
-            <form onSubmit={handleSubmit} className="mt-8 max-w-sm mx-auto space-y-4">
-                <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-400 mb-1">Team Name</label>
-                    <input 
-                        id="name"
-                        type="text"
-                        value={name}
-                        onChange={(e) => setName(e.target.value)}
-                        maxLength={24}
-                        required
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                    />
-                </div>
-                <div>
-                    <label htmlFor="tag" className="block text-sm font-medium text-gray-400 mb-1">Team Tag (2-4 characters)</label>
-                    <input
-                        id="tag"
-                        type="text"
-                        value={tag}
-                        onChange={(e) => setTag(e.target.value.toUpperCase())}
-                        maxLength={4}
-                        minLength={2}
-                        required
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                    />
-                </div>
-                 <div>
-                    <label htmlFor="avatarUrl" className="block text-sm font-medium text-gray-400 mb-1">Team Logo URL (Optional)</label>
-                    <input
-                        id="avatarUrl"
-                        type="url"
-                        value={avatarUrl}
-                        onChange={(e) => setAvatarUrl(e.target.value)}
-                        placeholder="https://example.com/logo.png"
-                        className="w-full bg-gray-700 border border-gray-600 rounded-lg py-2 px-4 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary"
-                    />
-                </div>
-                <Button type="submit" className="w-full !mt-6">Create Team</Button>
-            </form>
-        </Card>
-    );
-};
+import { GAMES } from '../constants';
 
 
 const ViewTeam: React.FC<{ team: Team }> = ({ team }) => {
@@ -112,61 +49,80 @@ const ViewTeam: React.FC<{ team: Team }> = ({ team }) => {
         <>
             <div className="space-y-8">
                 <Card className="!p-0 overflow-hidden">
-                     <div className="bg-gray-700 h-32" style={{backgroundImage: `url(https://picsum.photos/seed/${team.id}/1200/300)`, backgroundSize: 'cover'}}></div>
+                     <div className="bg-gray-200 dark:bg-gray-700 h-32" style={{backgroundImage: `url(https://picsum.photos/seed/${team.id}/1200/300)`, backgroundSize: 'cover'}}></div>
                      <div className="p-6">
-                        <div className="flex flex-col sm:flex-row items-end -mt-16">
-                            <img src={team.avatarUrl} alt={team.name} className="w-24 h-24 rounded-full border-4 border-gray-800 bg-gray-900" />
-                            <div className="ml-0 sm:ml-4 mt-4 sm:mt-0 flex-grow flex justify-between items-end">
-                                <div>
-                                    <h1 className="text-2xl font-bold text-white flex items-center">
-                                        {team.name} <span className="ml-3 text-lg font-mono bg-gray-700 text-brand-primary px-2 py-0.5 rounded">{team.tag}</span>
+                        <div className="flex flex-col sm:flex-row items-center sm:items-end -mt-20 sm:-mt-16">
+                            <img src={team.avatarUrl} alt={team.name} className="w-24 h-24 rounded-full border-4 border-white dark:border-gray-800 bg-gray-100 dark:bg-gray-900" />
+                            <div className="ml-0 sm:ml-4 mt-4 sm:mt-0 flex-grow w-full flex flex-col sm:flex-row items-center sm:justify-between">
+                                <div className="text-center sm:text-left">
+                                    <h1 className="text-2xl font-bold text-gray-900 dark:text-white flex items-center">
+                                        {team.name} <span className="ml-3 text-lg font-mono bg-gray-200 dark:bg-gray-700 text-brand-primary px-2 py-0.5 rounded">{team.tag}</span>
                                     </h1>
                                 </div>
                                 {isCaptain && (
-                                     <Button variant="primary" onClick={() => setInviteModalOpen(true)}>
+                                     <Button variant="primary" onClick={() => setInviteModalOpen(true)} className="mt-4 sm:mt-0">
                                         <UserPlus className="h-4 w-4 mr-2" />
                                         Invite Friends
                                     </Button>
                                 )}
                             </div>
                         </div>
-                        <div className="mt-6 grid grid-cols-1 md:grid-cols-3 gap-4 text-center">
+                        <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4 text-center">
                             <div>
-                                <p className="text-2xl font-bold text-white">{team.elo}</p>
-                                <p className="text-sm text-gray-400">Team ELO</p>
-                            </div>
-                            <div>
-                                 <p className="text-2xl font-bold text-white">{team.wins}W - {team.losses}L</p>
-                                <p className="text-sm text-gray-400">Record</p>
+                                 <p className="text-2xl font-bold text-gray-900 dark:text-white">{team.wins}W - {team.losses}L</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Record</p>
                             </div>
                              <div>
-                                <p className="text-2xl font-bold text-white">{members.length}</p>
-                                <p className="text-sm text-gray-400">Members</p>
+                                <p className="text-2xl font-bold text-gray-900 dark:text-white">{members.length}</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">Members</p>
                             </div>
                         </div>
                      </div>
                 </Card>
+                
+                <Card>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
+                        <ShieldCheck className="h-6 w-6 mr-3 text-brand-primary" />
+                        Team Game Ratings (ELO)
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        {GAMES.map(game => {
+                            const GameIcon = game.icon;
+                            return (
+                                <div key={game.id} className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center space-x-4">
+                                    {GameIcon && <GameIcon className="h-8 w-8 text-gray-600 dark:text-gray-400 flex-shrink-0" />}
+                                    <div>
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">{game.name}</p>
+                                        <p className="text-2xl font-bold text-gray-900 dark:text-white">{team.elo[game.id] || 1500}</p>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                </Card>
+
 
                 <Card>
-                    <h2 className="text-xl font-bold text-white mb-4">Team Roster</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Team Roster</h2>
                     <div className="space-y-3">
                         {members.map(member => (
-                            <div key={member.id} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                            <div key={member.id} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
                                 <Link to={member.id === user?.id ? `/profile` : `/users/${member.username}`} className="flex items-center space-x-4 group">
                                     <div className="relative flex-shrink-0">
-                                        <img src={member.avatarUrl} alt={member.username} className="w-12 h-12 rounded-full border-2 border-gray-600 group-hover:border-brand-primary transition-colors"/>
+                                        <img src={member.avatarUrl} alt={member.username} className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600 group-hover:border-brand-primary transition-colors"/>
                                         <div className="absolute bottom-0 right-0">
                                             <PresenceIndicator status={member.status} />
                                         </div>
                                     </div>
                                     <div>
-                                        <p className="font-bold text-white group-hover:underline">{member.username}</p>
-                                        <p className="text-sm text-gray-400">ELO: {member.elo}</p>
+                                        <p className="font-bold text-gray-900 dark:text-white group-hover:underline">{member.username}</p>
+                                        {/* FIX: Calculate and display overall ELO correctly, handling potential compile errors and division by zero. */}
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Overall ELO: {Object.values(member.elo).length > 0 ? Math.round(Object.values(member.elo).reduce((a, b) => a + Number(b), 0) / Object.values(member.elo).length) : 1500}</p>
                                     </div>
                                 </Link>
                                 <div className="flex items-center space-x-4">
                                      {member.id === team.captainId && (
-                                        <span className="flex items-center text-xs font-semibold text-yellow-400 bg-yellow-900/50 px-2 py-1 rounded-full">
+                                        <span className="flex items-center text-xs font-semibold text-yellow-800 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded-full">
                                             <Crown className="h-4 w-4 mr-1.5" /> Captain
                                         </span>
                                      )}
@@ -182,28 +138,28 @@ const ViewTeam: React.FC<{ team: Team }> = ({ team }) => {
                 </Card>
                 
                 <Card>
-                    <h2 className="text-xl font-bold text-white mb-4">Team Match History</h2>
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Team Match History</h2>
                     {teamMatches.length > 0 ? (
                          <div className="overflow-x-auto">
                             <table className="w-full text-left">
                                 <thead>
-                                    <tr className="border-b border-gray-700 text-sm text-gray-400">
-                                        <th className="py-2 px-4">Game</th>
-                                        <th className="py-2 px-4">Result</th>
-                                        <th className="py-2 px-4">Wager</th>
-                                        <th className="py-2 px-4">Type</th>
+                                    <tr className="border-b border-gray-200 dark:border-gray-700 text-sm text-gray-500 dark:text-gray-400">
+                                        <th className="py-2 px-2 sm:px-4">Game</th>
+                                        <th className="py-2 px-2 sm:px-4">Result</th>
+                                        <th className="py-2 px-2 sm:px-4">Wager</th>
+                                        <th className="py-2 px-2 sm:px-4">Type</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     {teamMatches.map(match => {
                                         const result = getMatchResult(match);
-                                        const resultColor = result === 'Win' ? 'text-green-400' : result === 'Loss' ? 'text-red-400' : 'text-yellow-400';
+                                        const resultColor = result === 'Win' ? 'text-green-500 dark:text-green-400' : result === 'Loss' ? 'text-red-500 dark:text-red-400' : 'text-yellow-500 dark:text-yellow-400';
                                         return (
-                                            <tr key={match.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                                                 <td className="py-3 px-4 flex items-center">{match.game.name}</td>
-                                                 <td className={`py-3 px-4 font-semibold ${resultColor}`}>{result}</td>
-                                                 <td className="py-3 px-4">{match.wager} C</td>
-                                                 <td className="py-3 px-4">{match.teamSize}</td>
+                                            <tr key={match.id} className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50">
+                                                 <td className="py-3 px-2 sm:px-4 flex items-center text-gray-900 dark:text-white font-medium">{match.game.name}</td>
+                                                 <td className={`py-3 px-2 sm:px-4 font-semibold ${resultColor}`}>{result}</td>
+                                                 <td className="py-3 px-2 sm:px-4 text-gray-600 dark:text-gray-300">{match.wager} C</td>
+                                                 <td className="py-3 px-2 sm:px-4 text-gray-600 dark:text-gray-300">{match.teamSize}</td>
                                             </tr>
                                         )
                                     })}
@@ -211,26 +167,26 @@ const ViewTeam: React.FC<{ team: Team }> = ({ team }) => {
                             </table>
                          </div>
                     ) : (
-                        <p className="text-gray-400 text-center py-4">This team has not played any official matches yet.</p>
+                        <p className="text-gray-500 dark:text-gray-400 text-center py-4">This team has not played any official matches yet.</p>
                     )}
                 </Card>
                 
                  <Card className="border-red-500/30">
-                    <h3 className="text-lg font-bold text-red-400 mb-2">Danger Zone</h3>
+                    <h3 className="text-lg font-bold text-red-500 dark:text-red-400 mb-2">Danger Zone</h3>
                      {isCaptain ? (
                         <div>
-                             <p className="text-sm text-gray-400 mb-4">Disbanding the team is permanent and will remove all members.</p>
+                             <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">Disbanding the party is permanent and will remove all members.</p>
                              <Button variant="danger" onClick={() => setConfirmation({type: 'disband'})}>
                                 <ShieldX className="h-4 w-4 mr-2" />
-                                Disband Team
+                                Disband Party
                             </Button>
                         </div>
                     ) : (
                         <div>
-                            <p className="text-sm text-gray-400 mb-4">You will need another invite to rejoin the team after leaving.</p>
+                            <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">You will need another invite to rejoin the party after leaving.</p>
                             <Button variant="danger" onClick={() => setConfirmation({type: 'leave'})}>
                                 <LogOut className="h-4 w-4 mr-2" />
-                                Leave Team
+                                Leave Party
                             </Button>
                         </div>
                     )}
@@ -248,28 +204,29 @@ const ViewTeam: React.FC<{ team: Team }> = ({ team }) => {
                 onClose={() => setConfirmation(null)}
                 title={
                     confirmation?.type === 'kick' ? `Kick ${confirmation.member?.username}?` :
-                    confirmation?.type === 'leave' ? 'Leave Team?' : 'Disband Team?'
+                    confirmation?.type === 'leave' ? 'Leave Party?' : 'Disband Party?'
                 }
                 footer={<>
                     <Button variant="secondary" onClick={() => setConfirmation(null)}>Cancel</Button>
                     <Button variant="danger" onClick={handleConfirm}>Confirm</Button>
                 </>}
             >
-                <p className="text-gray-300">
+                <p className="text-gray-600 dark:text-gray-300">
                     {
-                        confirmation?.type === 'kick' ? `Are you sure you want to remove ${confirmation.member?.username} from the team?` :
-                        confirmation?.type === 'leave' ? 'Are you sure you want to leave the team?' : 'Are you sure you want to disband the team? This action cannot be undone.'
+                        confirmation?.type === 'kick' ? `Are you sure you want to remove ${confirmation.member?.username} from the party?` :
+                        confirmation?.type === 'leave' ? 'Are you sure you want to leave the party?' : 'Are you sure you want to disband the party? This action cannot be undone.'
                     }
                 </p>
             </Modal>
         </>
     );
-}
+};
+
 
 function TeamPage() {
-    const { user, teams } = useAppContext();
+    const { user, teams, createTeam } = useAppContext();
     
-    if (!user) return null; // Or a loading spinner
+    if (!user) return null;
 
     const myTeam = teams.find(t => t.id === user.teamId);
 
@@ -277,19 +234,19 @@ function TeamPage() {
         return <ViewTeam team={myTeam} />;
     }
 
-    // If user has invites, show them before create form
-    if (user.teamInvites.length > 0) {
-        // A simple prompt to check notifications, since they handle the logic
-        return (
-            <Card className="text-center">
-                 <Shield className="h-16 w-16 mx-auto text-gray-500 mb-4" />
-                <h1 className="text-3xl font-bold text-white">You have pending team invites!</h1>
-                <p className="text-gray-400 mt-2">Check your notifications to accept or decline.</p>
-            </Card>
-        )
-    }
-
-    return <CreateTeamForm />;
+    return (
+        <Card className="text-center py-16">
+            <Shield className="h-20 w-20 mx-auto text-gray-400 dark:text-gray-600 mb-6" />
+            <h1 className="text-4xl font-bold text-gray-900 dark:text-white">No Party Found</h1>
+            <p className="text-gray-500 dark:text-gray-400 mt-3 max-w-lg mx-auto">
+                You are not currently in a party. Create one to team up with friends and enter matches together.
+            </p>
+            <Button onClick={createTeam} className="mt-8">
+                <UserPlus className="h-5 w-5 mr-2" />
+                Create Party
+            </Button>
+        </Card>
+    );
 }
 
 export default TeamPage;

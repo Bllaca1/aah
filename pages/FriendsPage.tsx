@@ -1,3 +1,5 @@
+
+
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/ui/Card';
@@ -9,25 +11,29 @@ import PresenceIndicator from '../components/ui/PresenceIndicator';
 
 type Tab = 'friends' | 'incoming' | 'sent';
 
-const UserCard: React.FC<{ user: User, children?: React.ReactNode }> = ({ user, children }) => (
-    <div className="flex items-center justify-between p-4 bg-gray-700/50 rounded-lg">
+const UserCard: React.FC<{ user: User, children?: React.ReactNode }> = ({ user, children }) => {
+    // FIX: Calculate and display overall ELO instead of the ELO object, and avoid division by zero.
+    const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
+    return (
+    <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg space-y-3 sm:space-y-0">
         <Link to={`/users/${user.username}`} className="flex items-center space-x-4 group">
             <div className="relative flex-shrink-0">
-                <img src={user.avatarUrl} alt={user.username} className="w-12 h-12 rounded-full border-2 border-gray-600 group-hover:border-brand-primary transition-colors"/>
+                <img src={user.avatarUrl} alt={user.username} className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600 group-hover:border-brand-primary transition-colors"/>
                 <div className="absolute bottom-0 right-0">
                     <PresenceIndicator status={user.status} />
                 </div>
             </div>
             <div>
-                <p className="font-bold text-white group-hover:underline">{user.username}</p>
-                <p className="text-sm text-gray-400">ELO: {user.elo}</p>
+                <p className="font-bold text-gray-900 dark:text-white group-hover:underline">{user.username}</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400">ELO: {overallElo}</p>
             </div>
         </Link>
-        <div className="flex space-x-2">
+        <div className="flex space-x-2 justify-end">
             {children}
         </div>
     </div>
 );
+};
 
 function FriendsPage() {
     const { user, allUsers, acceptFriendRequest, rejectFriendRequest, removeFriend } = useAppContext();
@@ -66,7 +72,7 @@ function FriendsPage() {
                 content = list.map(friend => (
                     <UserCard key={friend.id} user={friend}>
                         <Button variant="danger" onClick={() => removeFriend(friend.id)}>
-                            <Trash2 className="h-4 w-4 mr-2" /> Unfriend
+                            <Trash2 className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Unfriend</span>
                         </Button>
                     </UserCard>
                 ));
@@ -77,10 +83,10 @@ function FriendsPage() {
                  content = list.map(requester => (
                     <UserCard key={requester.id} user={requester}>
                         <Button variant="secondary" onClick={() => rejectFriendRequest(requester.id)}>
-                            <X className="h-4 w-4 mr-2" /> Decline
+                            <X className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Decline</span>
                         </Button>
                         <Button onClick={() => acceptFriendRequest(requester.id)}>
-                            <Check className="h-4 w-4 mr-2" /> Accept
+                            <Check className="h-4 w-4 md:mr-2" /> <span className="hidden md:inline">Accept</span>
                         </Button>
                     </UserCard>
                 ));
@@ -97,7 +103,7 @@ function FriendsPage() {
         }
 
         if (list.length === 0) {
-            return <div className="text-center py-16 text-gray-400">{emptyMessage}</div>;
+            return <div className="text-center py-16 text-gray-500 dark:text-gray-400">{emptyMessage}</div>;
         }
         return <div className="space-y-3">{content}</div>;
     };
@@ -105,27 +111,27 @@ function FriendsPage() {
     const TabButton: React.FC<{tab: Tab, icon: React.ReactNode, label: string, count: number}> = ({tab, icon, label, count}) => (
         <button
             onClick={() => handleTabClick(tab)}
-            className={`flex items-center justify-center w-full px-4 py-3 font-semibold text-sm transition-colors duration-200 border-b-2 ${activeTab === tab ? 'text-brand-primary border-brand-primary' : 'text-gray-400 border-transparent hover:text-white hover:border-gray-500'}`}
+            className={`flex items-center justify-center w-full px-2 sm:px-4 py-3 font-semibold text-sm transition-colors duration-200 border-b-2 ${activeTab === tab ? 'text-brand-primary border-brand-primary' : 'text-gray-500 dark:text-gray-400 border-transparent hover:text-gray-900 dark:hover:text-white hover:border-gray-300 dark:hover:border-gray-500'}`}
         >
-            {icon} <span className="ml-2">{label}</span>
-            {count > 0 && <span className="ml-2 bg-gray-700 text-brand-primary text-xs font-bold px-2 py-0.5 rounded-full">{count}</span>}
+            {icon} <span className="ml-2 hidden sm:inline">{label}</span>
+            {count > 0 && <span className="ml-2 bg-gray-200 dark:bg-gray-700 text-brand-primary text-xs font-bold px-2 py-0.5 rounded-full">{count}</span>}
         </button>
     );
 
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-white">Friends</h1>
-                <p className="text-gray-400 mt-1">Manage your friends and friend requests.</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Friends</h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">Manage your friends and friend requests.</p>
             </div>
             
             <Card className="!p-0">
-                <div className="flex border-b border-gray-700">
+                <div className="flex border-b border-gray-200 dark:border-gray-700">
                     <TabButton tab="friends" icon={<Users size={18} />} label="My Friends" count={myFriends.length} />
-                    <TabButton tab="incoming" icon={<UserPlus size={18} />} label="Incoming Requests" count={incomingRequests.length} />
-                    <TabButton tab="sent" icon={<Send size={18} />} label="Sent Requests" count={sentRequests.length} />
+                    <TabButton tab="incoming" icon={<UserPlus size={18} />} label="Incoming" count={incomingRequests.length} />
+                    <TabButton tab="sent" icon={<Send size={18} />} label="Sent" count={sentRequests.length} />
                 </div>
-                <div className="p-6">
+                <div className="p-2 sm:p-6">
                     {renderTabContent()}
                 </div>
             </Card>

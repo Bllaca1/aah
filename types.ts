@@ -15,7 +15,7 @@ export interface User {
   id: string;
   username: string;
   avatarUrl: string;
-  elo: number;
+  elo: { [gameId: string]: number };
   rating: number;
   credits: number;
   email?: string;
@@ -36,6 +36,9 @@ export interface User {
   teamInvites: string[]; // Team IDs
   goodSportRating: number; // Count of 'good sport' ratings received
   totalMatchesRated: number; // Total number of matches where opponents could rate them
+  isMatchmakingLocked: boolean;
+  primaryGames: string[]; // IDs of games the user primarily plays
+  hasCompletedOnboarding: boolean; // Flag to check if user has selected their games
 }
 
 export interface Team {
@@ -45,7 +48,7 @@ export interface Team {
   avatarUrl: string;
   captainId: string;
   members: string[]; // User IDs
-  elo: number;
+  elo: { [gameId: string]: number };
   wins: number;
   losses: number;
 }
@@ -59,11 +62,14 @@ export interface Game {
 }
 
 export enum MatchStatus {
+  LOBBY = 'Lobby',
   OPEN = 'Open',
   IN_PROGRESS = 'In Progress',
   COMPLETED = 'Completed',
   DISPUTED = 'Disputed',
   REFUNDED = 'Refunded',
+  AWAITING_ADMIN_REVIEW = 'Awaiting Admin Review',
+  AWAITING_OPPONENT_EVIDENCE = 'Awaiting Opponent Evidence',
 }
 
 export enum MatchTeamSize {
@@ -77,6 +83,20 @@ export enum ServerRegion {
     EU = 'Europe',
     ASIA = 'Asia',
 }
+
+export interface DisputeEvidence {
+  youtubeLink: string;
+  message: string;
+  submittedAt: string; // ISO 8601 timestamp
+}
+
+export interface DisputeDetails {
+  deadline: string; // ISO 8601 timestamp
+  playerEvidence: {
+    [playerId: string]: DisputeEvidence;
+  };
+}
+
 
 export interface Match {
   id: string;
@@ -94,6 +114,10 @@ export interface Match {
   winnerTeam?: 'A' | 'B' | null; // null for draw/refund
   teamAId?: string;
   teamBId?: string;
+  privacy: 'public' | 'private';
+  inviteCode?: string;
+  readyPlayers: string[]; // User IDs of players who are ready
+  disputeDetails?: DisputeDetails;
 }
 
 export enum TransactionType {
@@ -127,6 +151,7 @@ export enum NotificationType {
     GENERIC = 'GENERIC',
     TEAM_INVITE = 'TEAM_INVITE',
     TEAM_INVITE_ACCEPTED = 'TEAM_INVITE_ACCEPTED',
+    MATCH_LOBBY_INVITE = 'MATCH_LOBBY_INVITE',
 }
 
 export interface Notification {
@@ -146,6 +171,7 @@ export interface Notification {
 export enum ChannelType {
     DM = 'DM',
     MATCH = 'MATCH',
+    TEAM = 'TEAM',
 }
 
 export interface ChatMessage {

@@ -11,10 +11,10 @@ interface EditProfileModalProps {
 }
 
 const FormInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
-    <input {...props} className="bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary w-full" />
+    <input {...props} className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary w-full" />
 );
 const FormLabel: React.FC<{htmlFor?: string; children: React.ReactNode}> = ({htmlFor, children}) => (
-    <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-400 mb-1">{children}</label>
+    <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{children}</label>
 );
 
 const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, user, onSave }) => {
@@ -82,10 +82,10 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-lg relative border border-gray-700 flex flex-col">
-        <div className="flex justify-between items-center p-4 border-b border-gray-700 flex-shrink-0">
-            <h2 className="text-xl font-bold text-white">Edit Your Profile</h2>
-            <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full h-full sm:h-auto sm:max-h-[90vh] sm:max-w-lg relative border border-gray-200 dark:border-gray-700 flex flex-col">
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700 flex-shrink-0">
+            <h2 className="text-xl font-bold text-gray-900 dark:text-white">Edit Your Profile</h2>
+            <button onClick={onClose} className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
               <X size={24} />
             </button>
         </div>
@@ -96,7 +96,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
                 <div>
                     <FormLabel>Profile Picture</FormLabel>
                     <div className="flex items-center space-x-4 mt-2">
-                        <img src={formData.avatarUrl} alt="Avatar Preview" className="w-20 h-20 rounded-full object-cover border-2 border-gray-600"/>
+                        <img src={formData.avatarUrl} alt="Avatar Preview" className="w-20 h-20 rounded-full object-cover border-2 border-gray-300 dark:border-gray-600"/>
                         <div>
                             <input
                               id="avatar-upload"
@@ -121,7 +121,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
                 </div>
                 
                 <div className="pt-2">
-                   <h3 className="text-lg font-semibold text-white mb-2 border-b border-gray-700 pb-2">Linked Accounts</h3>
+                   <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 border-b border-gray-200 dark:border-gray-700 pb-2">Linked Accounts</h3>
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                       <div>
                           <FormLabel htmlFor="discord">Discord</FormLabel>
@@ -144,7 +144,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
             </form>
         </div>
 
-        <div className="p-4 bg-gray-900/50 flex justify-end space-x-3 border-t border-gray-700 flex-shrink-0">
+        <div className="p-4 bg-gray-50 dark:bg-gray-900/50 flex justify-end space-x-3 border-t border-gray-200 dark:border-gray-700 flex-shrink-0">
           <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
           <Button type="submit" form="edit-profile-form">Save Changes</Button>
         </div>

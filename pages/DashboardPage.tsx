@@ -1,9 +1,8 @@
-
 import React from 'react';
 import Card from '../components/ui/Card';
 import { useAppContext } from '../hooks/useAppContext';
 import MatchCard from '../components/matches/MatchCard';
-import { Clock, Star, ShieldCheck } from 'lucide-react';
+import { Clock, Star, ShieldCheck, Wallet } from 'lucide-react';
 import type { Match } from '../types';
 import { useNavigate } from 'react-router-dom';
 import { MatchStatus } from '../types';
@@ -14,8 +13,8 @@ const StatCard: React.FC<{ icon: React.ReactNode; label: string; value: string |
             {icon}
         </div>
         <div>
-            <p className="text-sm text-gray-400">{label}</p>
-            <p className="text-2xl font-bold text-white">{value}</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">{label}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{value}</p>
         </div>
     </Card>
 );
@@ -26,9 +25,12 @@ function DashboardPage() {
     const navigate = useNavigate();
 
     if (!user) return <div>Loading...</div>;
+    
+    // FIX: The `reduce` callback now correctly sums ELO values and avoids division by zero.
+    const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
 
     const activeMatches = matches.filter(m => 
-        (m.status === MatchStatus.IN_PROGRESS || m.status === MatchStatus.DISPUTED) && 
+        (m.status === MatchStatus.IN_PROGRESS || m.status === MatchStatus.DISPUTED || m.status === MatchStatus.AWAITING_ADMIN_REVIEW || m.status === MatchStatus.AWAITING_OPPONENT_EVIDENCE) && 
         [...m.teamA, ...m.teamB].includes(user.id)
     );
     
@@ -39,8 +41,8 @@ function DashboardPage() {
     return (
         <div className="space-y-8">
             <div>
-                <h1 className="text-3xl font-bold text-white">Welcome back, {user.username}!</h1>
-                <p className="text-gray-400 mt-1">Here's what's happening on BetDuel today.</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Welcome back, {user.username}!</h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">Here's what's happening on BetDuel today.</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -58,14 +60,14 @@ function DashboardPage() {
                 />
                  <StatCard 
                     icon={<ShieldCheck className="h-6 w-6 text-white" />}
-                    label="ELO Rating"
-                    value={user.elo}
+                    label="Overall ELO"
+                    value={overallElo}
                     color="bg-yellow-500"
                 />
             </div>
 
             <div>
-                <h2 className="text-2xl font-bold text-white mb-4 flex items-center">
+                <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
                     <Clock className="mr-3 h-6 w-6 text-brand-primary" />
                     Your Active Matches
                 </h2>
@@ -77,18 +79,12 @@ function DashboardPage() {
                     </div>
                 ) : (
                     <Card>
-                        <p className="text-center text-gray-400">You have no active matches.</p>
+                        <p className="text-center text-gray-500 dark:text-gray-400">You have no active matches.</p>
                     </Card>
                 )}
             </div>
         </div>
     );
 }
-
-// Dummy Wallet Icon for StatCard
-const Wallet: React.FC<{className?: string}> = ({className}) => (
-    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M21 12V7H5a2 2 0 0 1 0-4h14v4"/><path d="M3 5v14a2 2 0 0 0 2 2h16v-5"/><path d="M18 12a2 2 0 0 0 0 4h4v-4Z"/></svg>
-);
-
 
 export default DashboardPage;

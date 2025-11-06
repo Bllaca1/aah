@@ -1,5 +1,5 @@
 import { createContext } from 'react';
-import type { User, Match, Notification, ChatChannel, ChatMessage, Team } from '../types';
+import type { User, Match, Notification, ChatChannel, ChatMessage, Team, DisputeEvidence } from '../types';
 
 interface AppContextType {
   user: User | null;
@@ -25,15 +25,21 @@ interface AppContextType {
   markMessagesAsRead: (channelId: string) => void;
   reportMatchResult: (matchId: string, winningTeam: 'A' | 'B') => void;
   disputeMatch: (matchId: string) => void;
-  createTeam: (teamData: { name: string; tag: string; avatarUrl?: string }) => void;
+  submitDisputeEvidence: (matchId: string, evidence: Omit<DisputeEvidence, 'submittedAt'>) => void;
+  createTeam: () => void;
   inviteToTeam: (teamId: string, friendIds: string[]) => void;
   acceptTeamInvite: (teamId: string) => void;
   rejectTeamInvite: (teamId: string) => void;
   rateOpponents: (matchId: string) => void;
-  createMatch: (newMatchData: Partial<Match>) => void;
+  createMatch: (newMatchData: Partial<Match>) => Match | null;
   kickMember: (teamId: string, memberId: string) => void;
   leaveTeam: (teamId: string) => void;
   disbandTeam: (teamId: string) => void;
+  isInteractionLocked: boolean;
+  joinWithCode: (inviteCode: string) => Match | null;
+  inviteToLobby: (matchId: string, inviteeId: string) => void;
+  readyUp: (matchId: string) => void;
+  startPrivateMatch: (matchId: string) => void;
 }
 
 export const AppContext = createContext<AppContextType>({ 
@@ -60,13 +66,19 @@ export const AppContext = createContext<AppContextType>({
   markMessagesAsRead: () => {},
   reportMatchResult: () => {},
   disputeMatch: () => {},
+  submitDisputeEvidence: () => {},
   createTeam: () => {},
   inviteToTeam: () => {},
   acceptTeamInvite: () => {},
   rejectTeamInvite: () => {},
   rateOpponents: () => {},
-  createMatch: () => {},
+  createMatch: () => null,
   kickMember: () => {},
   leaveTeam: () => {},
   disbandTeam: () => {},
+  isInteractionLocked: false,
+  joinWithCode: () => null,
+  inviteToLobby: () => {},
+  readyUp: () => {},
+  startPrivateMatch: () => {},
 });

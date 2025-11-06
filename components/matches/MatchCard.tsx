@@ -1,11 +1,8 @@
-
-
-
 import React from 'react';
 import { Link } from 'react-router-dom';
 import type { Match, User, Team } from '../../types';
 import Button from '../ui/Button';
-import { Coins, AlertTriangle } from 'lucide-react';
+import { Coins, AlertTriangle, Clock } from 'lucide-react';
 import { useAppContext } from '../../hooks/useAppContext';
 import { MatchTeamSize, MatchStatus } from '../../types';
 import PresenceIndicator from '../ui/PresenceIndicator';
@@ -33,14 +30,16 @@ interface MatchCardProps {
 }
 
 const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
-    const { user: currentUser, allUsers, teams } = useAppContext();
+    const { user: currentUser, allUsers, teams, isInteractionLocked } = useAppContext();
 
     const statusColors: { [key: string]: string } = {
         'Open': 'border-green-500',
         'In Progress': 'border-blue-500',
         'Completed': 'border-gray-500',
-        'Disputed': 'border-red-500',
-        'Refunded': 'border-yellow-500'
+        'Disputed': 'border-yellow-500',
+        'Awaiting Admin Review': 'border-orange-500',
+        'Awaiting Opponent Evidence': 'border-orange-500',
+        'Refunded': 'border-gray-500'
     };
 
     const GameIcon = match.game.icon;
@@ -52,9 +51,9 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
                 <img 
                     src={player ? player.avatarUrl : 'https://i.pravatar.cc/150?u=empty'} 
                     alt={player ? player.username : 'Waiting'} 
-                    className={`w-12 h-12 rounded-full border-2 ${player ? 'border-gray-600' : 'border-dashed border-gray-500 opacity-50'}`}
+                    className={`w-12 h-12 rounded-full border-2 ${player ? 'border-gray-300 dark:border-gray-600' : 'border-dashed border-gray-400 dark:border-gray-500 opacity-50'}`}
                 />
-                <p className="mt-2 text-xs text-center text-white truncate w-full font-semibold">{player ? player.username : 'Waiting...'}</p>
+                <p className="mt-2 text-xs text-center text-gray-900 dark:text-white truncate w-full font-semibold">{player ? player.username : 'Waiting...'}</p>
             </div>
         );
 
@@ -72,13 +71,13 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
         <div className="flex flex-col items-center">
             {team ? (
                 <>
-                    <img src={team.avatarUrl} alt={team.name} className="w-12 h-12 rounded-full border-2 border-gray-600 bg-gray-900" />
-                    <p className="mt-2 text-sm text-center text-white truncate w-full font-semibold">{team.name} <span className="text-gray-400">[{team.tag}]</span></p>
+                    <img src={team.avatarUrl} alt={team.name} className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-900" />
+                    <p className="mt-2 text-sm text-center text-gray-900 dark:text-white truncate w-full font-semibold">{team.name} <span className="text-gray-500 dark:text-gray-400">[{team.tag}]</span></p>
                 </>
             ) : (
-                 <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-500 opacity-50 bg-gray-900" />
+                 <div className="w-12 h-12 rounded-full border-2 border-dashed border-gray-400 dark:border-gray-500 opacity-50 bg-gray-200 dark:bg-gray-900" />
             )}
-            <p className="mt-1 text-xs text-gray-400">{team ? `${players.length}/5 players` : `Team ${teamLetter}`}</p>
+            <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{team ? `${players.length}/5 players` : `Team ${teamLetter}`}</p>
         </div>
     );
 
@@ -89,7 +88,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
             return (
                 <div className="flex items-center justify-around w-full">
                     {renderPlayer(player1 || null)}
-                    <span className="text-gray-500 font-bold text-lg">VS</span>
+                    <span className="text-gray-400 dark:text-gray-500 font-bold text-lg">VS</span>
                     {renderPlayer(player2 || null)}
                 </div>
             );
@@ -99,7 +98,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
             return (
                  <div className="flex items-center justify-around w-full">
                     <TeamDisplay team={teamA} players={match.teamA} teamLetter="A" />
-                    <span className="text-gray-500 font-bold text-lg">VS</span>
+                    <span className="text-gray-400 dark:text-gray-500 font-bold text-lg">VS</span>
                     <TeamDisplay team={teamB} players={match.teamB} teamLetter="B" />
                 </div>
             );
@@ -108,7 +107,7 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
 
 
     return (
-        <div className={`bg-gray-800 rounded-lg overflow-hidden shadow-lg border-t-4 ${statusColors[match.status] || 'border-gray-700'} transition-transform duration-300 hover:scale-105 flex flex-col`}>
+        <div className={`bg-white dark:bg-gray-800 rounded-lg overflow-hidden shadow-lg border-t-4 ${statusColors[match.status] || 'border-gray-300 dark:border-gray-700'} transition-transform duration-300 hover:scale-105 flex flex-col`}>
             <div className="relative">
                 <img src={match.game.imageUrl} alt={match.game.name} className="w-full h-32 object-cover"/>
                 <div className="absolute top-2 right-2 bg-black bg-opacity-70 text-white text-xs font-bold py-1 px-2 rounded flex items-center">
@@ -124,10 +123,10 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
                          IN PROGRESS
                      </div>
                  )}
-                 {match.status === MatchStatus.DISPUTED && (
-                     <div className="absolute top-2 left-2 flex items-center text-red-400 bg-red-900 bg-opacity-50 px-2 py-1 rounded-full text-xs">
-                         <AlertTriangle className="h-4 w-4 mr-1 animate-pulse" />
-                         DISPUTED
+                 {[MatchStatus.DISPUTED, MatchStatus.AWAITING_ADMIN_REVIEW, MatchStatus.AWAITING_OPPONENT_EVIDENCE].includes(match.status) && (
+                     <div className="absolute top-2 left-2 flex items-center text-yellow-400 bg-yellow-900 bg-opacity-50 px-2 py-1 rounded-full text-xs">
+                         <Clock className="h-4 w-4 mr-1 animate-pulse" />
+                         {match.status.toUpperCase()}
                      </div>
                  )}
             </div>
@@ -136,19 +135,19 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
                     <div className="flex items-center space-x-2">
                         <Coins className="h-6 w-6 text-yellow-400" />
                         <div>
-                            <p className="text-xs text-gray-400">Wager</p>
-                            <p className="text-lg font-bold text-white">{match.wager} C</p>
+                            <p className="text-xs text-gray-500 dark:text-gray-400">Wager</p>
+                            <p className="text-lg font-bold text-gray-900 dark:text-white">{match.wager} C</p>
                         </div>
                     </div>
                      <div className="text-right">
-                        <p className="text-xs text-gray-400">Prize Pool</p>
-                        <p className="text-lg font-bold text-green-400">{match.prizePool} C</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">Prize Pool</p>
+                        <p className="text-lg font-bold text-green-500 dark:text-green-400">{match.prizePool} C</p>
                     </div>
                 </div>
                 
                 <div className="flex-grow flex flex-col justify-center items-center my-2">
                     {renderMatchup()}
-                    <div className="text-xs text-gray-400 mt-3 text-center">
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
                         <span>{match.teamSize} &bull; {match.region} &bull; ELO: {match.elo}</span>
                     </div>
                 </div>
@@ -162,10 +161,17 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
 
                 <div className="mt-auto pt-2">
                     {match.status === 'Open' ? (
-                         <Button className="w-full" onClick={() => onViewClick && onViewClick(match)}>View &amp; Join</Button>
+                         <Button 
+                             className="w-full" 
+                             onClick={() => onViewClick && onViewClick(match)}
+                             disabled={isInteractionLocked}
+                             title={isInteractionLocked ? "Complete your active match or dispute first." : "View & Join"}
+                         >
+                             View &amp; Join
+                         </Button>
                     ) : (
                         <Button className="w-full" variant="secondary" onClick={() => onViewClick && onViewClick(match)}>
-                            {match.status === 'In Progress' || match.status === 'Disputed' ? 'View Match' : 'View Result'}
+                            {match.status === 'In Progress' || match.status === 'Disputed' || match.status === 'Awaiting Admin Review' || match.status === 'Awaiting Opponent Evidence' ? 'View Match' : 'View Result'}
                         </Button>
                     )}
                 </div>

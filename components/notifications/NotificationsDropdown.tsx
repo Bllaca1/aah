@@ -15,9 +15,9 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ onClose }
   };
 
   return (
-    <div className="absolute top-full right-0 mt-2 w-80 max-w-sm bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-50 flex flex-col max-h-[70vh]">
-      <div className="flex justify-between items-center p-3 border-b border-gray-700">
-        <h3 className="font-bold text-white text-lg">Notifications</h3>
+    <div className="absolute top-full right-0 mt-2 w-80 max-w-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-2xl z-50 flex flex-col max-h-[70vh]">
+      <div className="flex justify-between items-center p-3 border-b border-gray-200 dark:border-gray-700">
+        <h3 className="font-bold text-gray-900 dark:text-white text-lg">Notifications</h3>
         <button 
           onClick={handleMarkAllRead}
           className="text-sm text-brand-primary hover:underline"
@@ -34,14 +34,14 @@ const NotificationsDropdown: React.FC<NotificationsDropdownProps> = ({ onClose }
             ))}
           </div>
         ) : (
-          <div className="text-center py-12 px-4 text-gray-400">
-            <BellOff className="h-12 w-12 mx-auto text-gray-500 mb-4" />
+          <div className="text-center py-12 px-4 text-gray-500 dark:text-gray-400">
+            <BellOff className="h-12 w-12 mx-auto text-gray-400 dark:text-gray-500 mb-4" />
             <p>You have no notifications.</p>
           </div>
         )}
       </div>
-       <div className="p-2 text-center border-t border-gray-700">
-        <button className="text-sm font-medium text-gray-400 hover:text-white w-full">
+       <div className="p-2 text-center border-t border-gray-200 dark:border-gray-700">
+        <button className="text-sm font-medium text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white w-full">
             View All Notifications
         </button>
       </div>

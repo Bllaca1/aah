@@ -14,10 +14,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4" role="dialog" aria-modal="true" onClick={onClose}>
-      <div className="bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative border border-gray-700" onClick={e => e.stopPropagation()}>
-        <div className="flex justify-between items-center p-4 border-b border-gray-700">
-          <h2 className="text-xl font-bold text-white">{title}</h2>
-          <button onClick={onClose} className="p-1 rounded-full text-gray-400 hover:text-white hover:bg-gray-700">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-md relative border border-gray-200 dark:border-gray-700" onClick={e => e.stopPropagation()}>
+        <div className="flex justify-between items-center p-4 border-b border-gray-200 dark:border-gray-700">
+          <h2 className="text-xl font-bold text-gray-900 dark:text-white">{title}</h2>
+          <button onClick={onClose} className="p-1 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
             <X size={24} />
           </button>
         </div>
@@ -25,7 +25,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, title, children, footer 
           {children}
         </div>
         {footer && (
-          <div className="bg-gray-900/50 px-6 py-4 flex justify-end space-x-3 rounded-b-lg">
+          <div className="bg-gray-50 dark:bg-gray-900/50 px-6 py-4 flex justify-end space-x-3 rounded-b-lg border-t border-gray-200 dark:border-gray-700">
             {footer}
           </div>
         )}

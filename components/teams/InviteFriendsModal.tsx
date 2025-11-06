@@ -16,28 +16,32 @@ const FriendSelectItem: React.FC<{
     friend: User;
     isSelected: boolean;
     onToggle: (id: string) => void;
-}> = ({ friend, isSelected, onToggle }) => (
+}> = ({ friend, isSelected, onToggle }) => {
+    // FIX: Calculate and display overall ELO instead of the ELO object, and avoid division by zero.
+    const overallElo = Object.values(friend.elo).length > 0 ? Math.round(Object.values(friend.elo).reduce((a, b) => a + b, 0) / Object.values(friend.elo).length) : 1500;
+    return (
     <div 
         onClick={() => onToggle(friend.id)}
-        className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-brand-primary/20 ring-2 ring-brand-primary' : 'bg-gray-700/50 hover:bg-gray-700'}`}
+        className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${isSelected ? 'bg-brand-primary/20 ring-2 ring-brand-primary' : 'bg-gray-100 dark:bg-gray-700/50 hover:bg-gray-200 dark:hover:bg-gray-700'}`}
     >
          <div className="flex items-center space-x-4">
             <div className="relative flex-shrink-0">
-                <img src={friend.avatarUrl} alt={friend.username} className="w-10 h-10 rounded-full border-2 border-gray-600"/>
+                <img src={friend.avatarUrl} alt={friend.username} className="w-10 h-10 rounded-full border-2 border-gray-300 dark:border-gray-600"/>
                 <div className="absolute bottom-0 right-0">
                     <PresenceIndicator status={friend.status} size="sm" />
                 </div>
             </div>
             <div>
-                <p className="font-semibold text-white">{friend.username}</p>
-                <p className="text-xs text-gray-400">ELO: {friend.elo}</p>
+                <p className="font-semibold text-gray-900 dark:text-white">{friend.username}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">ELO: {overallElo}</p>
             </div>
         </div>
-        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-brand-primary border-brand-primary' : 'border-gray-500'}`}>
+        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-all ${isSelected ? 'bg-brand-primary border-brand-primary' : 'border-gray-400 dark:border-gray-500'}`}>
             {isSelected && <div className="w-2.5 h-2.5 bg-white rounded-full"></div>}
         </div>
     </div>
 );
+};
 
 const InviteFriendsModal: React.FC<InviteFriendsModalProps> = ({ isOpen, onClose, team }) => {
     const { user, allUsers, inviteToTeam } = useAppContext();
@@ -95,7 +99,7 @@ const InviteFriendsModal: React.FC<InviteFriendsModalProps> = ({ isOpen, onClose
                         />
                     ))
                 ) : (
-                    <div className="text-center py-10 text-gray-400">
+                    <div className="text-center py-10 text-gray-500 dark:text-gray-400">
                         <p>All of your friends are already on a team or have been invited.</p>
                     </div>
                 )}

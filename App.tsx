@@ -1,8 +1,4 @@
-
-
-
-
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useMemo, useEffect } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/layout/Header';
 import Sidebar from './components/layout/Sidebar';
@@ -18,12 +14,62 @@ import AdminDisputesPage from './pages/AdminDisputesPage';
 import TeamPage from './pages/TeamPage';
 import { AppContext } from './context/AppContext';
 import { MOCK_MATCHES, ALL_MOCK_USERS, MOCK_NOTIFICATIONS, MOCK_CHANNELS, MOCK_MESSAGES, MOCK_TEAMS, GAMES } from './constants';
-import type { User, Match, Notification, ChatChannel, ChatMessage, Team } from './types';
-import { UserRole, MatchTeamSize, MatchStatus, NotificationType, ServerRegion } from './types';
+import type { User, Match, Notification, ChatChannel, ChatMessage, Team, DisputeEvidence } from './types';
+import { UserRole, MatchTeamSize, MatchStatus, NotificationType, ServerRegion, ChannelType } from './types';
 import SearchPage from './pages/SearchPage';
 import UserProfilePage from './pages/UserProfilePage';
 import FriendsPage from './pages/FriendsPage';
 import ChatWidget from './components/chat/ChatWidget';
+import { useAppContext } from './hooks/useAppContext';
+import { ThemeProvider } from './context/ThemeContext';
+import LobbyPage from './pages/LobbyPage';
+import GameSelectionModal from './components/onboarding/GameSelectionModal';
+
+
+const AuthLayout = () => (
+  <div className="bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+    <Routes>
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
+      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="*" element={<Navigate to="/login" />} />
+    </Routes>
+  </div>
+);
+
+const AppLayout = () => {
+  const { user } = useAppContext();
+  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
+  
+  return (
+    <div className="flex h-screen bg-gray-100 dark:bg-gray-900 text-gray-800 dark:text-gray-200">
+      <Sidebar isMobileOpen={isMobileSidebarOpen} setMobileOpen={setMobileSidebarOpen} />
+      <div className="flex-1 flex flex-col overflow-hidden">
+        <Header onMobileMenuClick={() => setMobileSidebarOpen(true)} />
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-100 dark:bg-gray-900 p-4 sm:p-6">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" />} />
+            <Route path="/dashboard" element={<DashboardPage />} />
+            <Route path="/matches" element={<MatchesPage />} />
+            <Route path="/matches/:matchId" element={<MatchDetailsPage />} />
+            <Route path="/lobby/:matchId" element={<LobbyPage />} />
+            <Route path="/search" element={<SearchPage />} />
+            <Route path="/users/:username" element={<UserProfilePage />} />
+            <Route path="/friends" element={<FriendsPage />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route path="/profile" element={<ProfilePage />} />
+            <Route path="/wallet" element={<WalletPage />} />
+            {user?.role === UserRole.ADMIN && (
+              <Route path="/admin/disputes" element={<AdminDisputesPage />} />
+            )}
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+          </Routes>
+        </main>
+      </div>
+      <ChatWidget />
+    </div>
+  );
+};
 
 
 function App() {
@@ -32,9 +78,19 @@ function App() {
   const [allUsers, setAllUsers] = useState<User[]>(ALL_MOCK_USERS);
   const [teams, setTeams] = useState<Team[]>(MOCK_TEAMS);
   const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [channels, setChannels] = useState<ChatChannel[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [isGameSelectionModalOpen, setGameSelectionModalOpen] = useState(false);
+
+  const isInteractionLocked = useMemo(() => {
+    if (!user) return false;
+     if (user.isMatchmakingLocked) return true;
+
+    return matches.some(match =>
+        (match.status === MatchStatus.IN_PROGRESS || match.status === MatchStatus.DISPUTED || match.status === MatchStatus.AWAITING_ADMIN_REVIEW) &&
+        (match.teamA.includes(user.id) || match.teamB.includes(user.id))
+    );
+  }, [user, matches]);
 
   const updateMatch = useCallback((matchId: string, updates: Partial<Match>) => {
     setMatches(prevMatches =>
@@ -66,11 +122,40 @@ function App() {
     }
   }, [user, updateUserById]);
 
+    const resolveMatchAndUnlockPlayers = useCallback((matchId: string, updates: Partial<Match>) => {
+        const match = matches.find(m => m.id === matchId);
+        if (!match) return;
+
+        updateMatch(matchId, updates);
+        
+        const playersToUnlock = [...match.teamA, ...match.teamB];
+        playersToUnlock.forEach(playerId => {
+            updateUserById(playerId, { isMatchmakingLocked: false });
+            if (user && user.id === playerId) {
+                updateUser({ isMatchmakingLocked: false });
+            }
+        });
+    }, [matches, updateMatch, updateUserById, user, updateUser]);
+
+
   const login = useCallback((loggedInUser: User) => {
+    // For mock purposes: if user is new (from signup), add them to the list.
+    setAllUsers(prevUsers => {
+        const userExists = prevUsers.some(u => u.id === loggedInUser.id);
+        if (userExists) {
+            return prevUsers.map(u => u.id === loggedInUser.id ? loggedInUser : u);
+        }
+        return [...prevUsers, loggedInUser];
+    });
+
     setUser(loggedInUser);
     setNotifications(MOCK_NOTIFICATIONS);
     setChannels(MOCK_CHANNELS);
     setMessages(MOCK_MESSAGES);
+
+    if (!loggedInUser.hasCompletedOnboarding) {
+      setGameSelectionModalOpen(true);
+    }
   }, []);
 
   const logout = useCallback(() => {
@@ -151,6 +236,11 @@ function App() {
 
     const joinTeam = useCallback((matchId: string, team: 'A' | 'B') => {
         if (!user) return;
+        
+        if (isInteractionLocked) {
+            alert("You are in an active match or dispute. Please complete it before joining another.");
+            return;
+        }
 
         const match = matches.find(m => m.id === matchId);
         if (!match) {
@@ -187,23 +277,85 @@ function App() {
             prizePool: match.prizePool + match.wager,
         };
 
-        if (newTeamA.length === maxTeamSize && newTeamB.length === maxTeamSize) {
+        if (match.privacy === 'public' && newTeamA.length === maxTeamSize && newTeamB.length === maxTeamSize) {
             updates.status = MatchStatus.IN_PROGRESS;
         }
 
         updateMatch(matchId, updates);
-    }, [user, matches, updateUser, updateMatch]);
+        
+        setChannels(prev => prev.map(c => 
+            c.id === matchId && !c.participantIds.includes(user.id)
+            ? { ...c, participantIds: [...c.participantIds, user.id] } 
+            : c
+        ));
+    }, [user, matches, updateUser, updateMatch, isInteractionLocked]);
 
   const reportMatchResult = useCallback((matchId: string, winningTeam: 'A' | 'B') => {
     const match = matches.find(m => m.id === matchId);
-    if (!match || match.status !== MatchStatus.IN_PROGRESS) {
-      console.error("Match cannot be settled.");
+    if (!match) return;
+    if (match.status === MatchStatus.COMPLETED) {
+      console.error("Match already completed.");
       return;
     }
 
     const winningTeamIds = winningTeam === 'A' ? match.teamA : match.teamB;
+    const losingTeamIds = winningTeam === 'A' ? match.teamB : match.teamA;
+
+    // --- ELO Calculation ---
+    const K_FACTOR = 32;
+    const gameId = match.game.id;
+    
+    const getAvgElo = (playerIds: string[]) => {
+      if (playerIds.length === 0) return 1500; // Default ELO
+      const totalElo = playerIds.reduce((sum, pId) => {
+        const player = allUsers.find(u => u.id === pId);
+        return sum + (player?.elo[gameId] || 1500);
+      }, 0);
+      return totalElo / playerIds.length;
+    };
+    
+    const avgEloWinner = getAvgElo(winningTeamIds);
+    const avgEloLoser = getAvgElo(losingTeamIds);
+
+    const expectedWinner = 1 / (1 + 10 ** ((avgEloLoser - avgEloWinner) / 400));
+    const expectedLoser = 1 - expectedWinner;
+
+    const eloChangeWinner = K_FACTOR * (1 - expectedWinner);
+    const eloChangeLoser = K_FACTOR * (0 - expectedLoser);
+
+    // Update player ELOs
+    [...winningTeamIds, ...losingTeamIds].forEach(pId => {
+      const player = allUsers.find(u => u.id === pId);
+      if (player) {
+        const eloChange = winningTeamIds.includes(pId) ? eloChangeWinner : eloChangeLoser;
+        const currentElo = player.elo[gameId] || 1500;
+        const newElo = Math.round(currentElo + eloChange);
+        updateUserById(pId, {
+          elo: { ...player.elo, [gameId]: newElo }
+        });
+      }
+    });
+
+    // Update team ELOs if applicable
+    const winningTeamData = teams.find(t => winningTeam === 'A' ? t.id === match.teamAId : t.id === match.teamBId);
+    const losingTeamData = teams.find(t => winningTeam === 'A' ? t.id === match.teamBId : t.id === match.teamAId);
+    
+    if (winningTeamData) {
+        const currentElo = winningTeamData.elo[gameId] || 1500;
+        const newElo = Math.round(currentElo + eloChangeWinner);
+        setTeams(prev => prev.map(t => t.id === winningTeamData.id ? { ...t, wins: t.wins + 1, elo: {...t.elo, [gameId]: newElo} } : t));
+    }
+     if (losingTeamData) {
+        const currentElo = losingTeamData.elo[gameId] || 1500;
+        const newElo = Math.round(currentElo + eloChangeLoser);
+        setTeams(prev => prev.map(t => t.id === losingTeamData.id ? { ...t, losses: t.losses + 1, elo: {...t.elo, [gameId]: newElo} } : t));
+    }
+
+
+    // --- Credit Distribution ---
     if (winningTeamIds.length === 0) {
       console.error("Winning team has no players.");
+      resolveMatchAndUnlockPlayers(matchId, { status: MatchStatus.REFUNDED, winnerTeam: null });
       return;
     }
 
@@ -214,20 +366,16 @@ function App() {
     winningTeamIds.forEach(winnerId => {
       const winner = allUsers.find(u => u.id === winnerId);
       if (winner) {
-          // If the winner is the current logged in user, use `updateUser` which handles both states.
+          updateUserById(winnerId, { credits: winner.credits + winningsPerPlayer });
           if (user && user.id === winnerId) {
-              updateUser({ credits: winner.credits + winningsPerPlayer });
-          } else {
-              // Otherwise, just update the global list.
-              updateUserById(winnerId, { credits: winner.credits + winningsPerPlayer });
+             setUser(prev => prev ? ({ ...prev, credits: prev.credits + winningsPerPlayer }) : null);
           }
       }
     });
     
-    // FIX: Correctly pass winningTeam to updateMatch. The `winnerTeam` property was used as a shorthand, but the variable in scope is `winningTeam`.
-    updateMatch(matchId, { status: MatchStatus.COMPLETED, winnerTeam: winningTeam });
+    resolveMatchAndUnlockPlayers(matchId, { status: MatchStatus.COMPLETED, winnerTeam: winningTeam });
 
-  }, [matches, allUsers, user, updateMatch, updateUserById, updateUser]);
+  }, [matches, allUsers, user, teams, resolveMatchAndUnlockPlayers, updateUserById]);
 
   const disputeMatch = useCallback((matchId: string) => {
     const match = matches.find(m => m.id === matchId);
@@ -235,8 +383,74 @@ function App() {
       console.error("Match cannot be disputed.");
       return;
     }
-    updateMatch(matchId, { status: MatchStatus.DISPUTED });
-  }, [matches, updateMatch]);
+
+    const deadline = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(); // 24h deadline
+
+    updateMatch(matchId, { 
+        status: MatchStatus.DISPUTED,
+        disputeDetails: {
+            deadline,
+            playerEvidence: {}
+        }
+    });
+
+    const playersToLock = [...match.teamA, ...match.teamB];
+    playersToLock.forEach(playerId => {
+        updateUserById(playerId, { isMatchmakingLocked: true });
+    });
+    
+    if (user && playersToLock.includes(user.id)) {
+        updateUser({ isMatchmakingLocked: true });
+    }
+  }, [matches, updateMatch, user, updateUser, updateUserById]);
+
+  const submitDisputeEvidence = useCallback((matchId: string, evidence: Omit<DisputeEvidence, 'submittedAt'>) => {
+    if (!user) return;
+    
+    const youtubeRegex = /^(https?:\/\/)?(www\.)?(youtube\.com|youtu\.?be)\/.+$/;
+    if (!youtubeRegex.test(evidence.youtubeLink)) {
+        alert("Please provide a valid YouTube link.");
+        return;
+    }
+
+    const match = matches.find(m => m.id === matchId);
+    if (!match || !match.disputeDetails) return;
+
+    // Unlock the submitting player
+    updateUser({ isMatchmakingLocked: false });
+    updateUserById(user.id, { isMatchmakingLocked: false });
+
+    const newPlayerEvidence = {
+        ...match.disputeDetails.playerEvidence,
+        [user.id]: {
+            ...evidence,
+            submittedAt: new Date().toISOString(),
+        }
+    };
+    
+    const allPlayers = [...match.teamA, ...match.teamB];
+    const opponentIds = allPlayers.filter(pId => !match.teamA.includes(user.id) ? match.teamA.includes(pId) : match.teamB.includes(pId));
+    const opponentHasSubmitted = opponentIds.some(id => newPlayerEvidence[id]);
+
+    let newStatus = match.status;
+    let newDeadline = match.disputeDetails.deadline;
+
+    if (opponentHasSubmitted) {
+        newStatus = MatchStatus.AWAITING_ADMIN_REVIEW;
+    } else {
+        newStatus = MatchStatus.AWAITING_OPPONENT_EVIDENCE;
+        newDeadline = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour from now
+    }
+
+    updateMatch(matchId, {
+        status: newStatus,
+        disputeDetails: {
+            ...match.disputeDetails,
+            deadline: newDeadline,
+            playerEvidence: newPlayerEvidence,
+        }
+    });
+  }, [user, matches, updateMatch, updateUser, updateUserById]);
 
   const sendMessage = useCallback((channelId: string, content: string) => {
     if (!user) return;
@@ -260,44 +474,67 @@ function App() {
   const markMessagesAsRead = useCallback((channelId: string) => {
       if (!user) return;
 
-      setMessages(prev => prev.map(msg => {
-          if (msg.channelId === channelId && !msg.readBy.includes(user.id)) {
-              return { ...msg, readBy: [...msg.readBy, user.id] };
-          }
-          return msg;
-      }));
+      setMessages(prevMessages => {
+          let hasChanged = false;
+          const newMessages = prevMessages.map(msg => {
+              if (msg.channelId === channelId && !msg.readBy.includes(user.id)) {
+                  hasChanged = true;
+                  return { ...msg, readBy: [...msg.readBy, user.id] };
+              }
+              return msg;
+          });
+          return hasChanged ? newMessages : prevMessages;
+      });
       
-      setChannels(prevChannels => prevChannels.map(channel => {
-          if (channel.id === channelId && channel.lastMessage && !channel.lastMessage.readBy.includes(user.id)) {
-              return {
-                  ...channel,
-                  lastMessage: {
-                      ...channel.lastMessage,
-                      readBy: [...channel.lastMessage.readBy, user.id]
-                  }
-              };
-          }
-          return channel;
-      }));
+      setChannels(prevChannels => {
+          let hasChanged = false;
+          const newChannels = prevChannels.map(channel => {
+              if (channel.id === channelId && channel.lastMessage && !channel.lastMessage.readBy.includes(user.id)) {
+                  hasChanged = true;
+                  return {
+                      ...channel,
+                      lastMessage: {
+                          ...channel.lastMessage,
+                          readBy: [...channel.lastMessage.readBy, user.id]
+                      }
+                  };
+              }
+              return channel;
+          });
+          return hasChanged ? newChannels : prevChannels;
+      });
   }, [user]);
 
-  const createTeam = useCallback((teamData: { name: string; tag: string; avatarUrl?: string }) => {
+  const createTeam = useCallback(() => {
     if (!user) return;
+    
+    const initialElo = GAMES.reduce((acc, game) => {
+        acc[game.id] = 1500;
+        return acc;
+    }, {} as { [gameId: string]: number });
 
     const newTeam: Team = {
       id: `team-${Date.now()}`,
-      name: teamData.name,
-      tag: teamData.tag,
-      avatarUrl: teamData.avatarUrl || `https://api.dicebear.com/8.x/rings/svg?seed=${teamData.name}`,
+      name: `${user.username}'s Party`,
+      tag: 'PARTY',
+      avatarUrl: `https://api.dicebear.com/8.x/initials/svg?seed=${user.username}`,
       captainId: user.id,
       members: [user.id],
-      elo: 1500, // Starting ELO
+      elo: initialElo,
       wins: 0,
       losses: 0,
     };
 
     setTeams(prev => [...prev, newTeam]);
     updateUser({ teamId: newTeam.id });
+
+    const newChannel: ChatChannel = {
+        id: newTeam.id,
+        type: ChannelType.TEAM,
+        participantIds: [user.id],
+    };
+    setChannels(prev => [...prev, newChannel]);
+
   }, [user, updateUser]);
 
   const inviteToTeam = useCallback((teamId: string, friendIds: string[]) => {
@@ -336,6 +573,12 @@ function App() {
 
     setTeams(prevTeams => prevTeams.map(t => 
       t.id === teamId ? { ...t, members: [...t.members, user.id] } : t
+    ));
+
+    setChannels(prev => prev.map(c => 
+        c.id === teamId && !c.participantIds.includes(user.id)
+        ? { ...c, participantIds: [...c.participantIds, user.id] } 
+        : c
     ));
 
     markNotificationAsRead(`notif-team-invite-${teamId}`);
@@ -382,29 +625,45 @@ function App() {
     });
   }, [user, matches, updateMatch]);
 
-    const createMatch = useCallback((newMatchData: Partial<Match>) => {
-        if (!user) return;
+    const createMatch = useCallback((newMatchData: Partial<Match>): Match | null => {
+        if (!user) return null;
+
+        if (isInteractionLocked) {
+            alert("You are in an active match or dispute. Please complete it before creating a new one.");
+            return null;
+        }
+
         const game = GAMES.find(g => g.id === (newMatchData.game as any)?.id);
-        if (!game) return;
+        if (!game) return null;
 
         const newMatch: Match = {
             id: `match-${Date.now()}`,
             game,
             wager: newMatchData.wager || 0,
             teamSize: newMatchData.teamSize || MatchTeamSize.SOLO,
-            // FIX: Use the ServerRegion enum member instead of a string literal to match the type definition.
             region: newMatchData.region || ServerRegion.NA_EAST,
-            status: MatchStatus.OPEN,
-            elo: user.elo,
+            status: newMatchData.privacy === 'private' ? MatchStatus.LOBBY : MatchStatus.OPEN,
+            elo: user.elo[game.id] || 1500,
             teamA: [user.id],
             teamB: [],
             prizePool: newMatchData.wager || 0,
             createdAt: new Date().toISOString(),
             teamAId: newMatchData.teamAId,
+            privacy: newMatchData.privacy || 'public',
+            inviteCode: newMatchData.privacy === 'private' ? Math.random().toString(36).substring(2, 7).toUpperCase() : undefined,
+            readyPlayers: newMatchData.privacy === 'private' ? [user.id] : [],
         };
 
         setMatches(prev => [newMatch, ...prev]);
-    }, [user]);
+
+        const newChannel: ChatChannel = {
+            id: newMatch.id,
+            type: ChannelType.MATCH,
+            participantIds: [user.id],
+        };
+        setChannels(prev => [...prev, newChannel]);
+        return newMatch;
+    }, [user, isInteractionLocked]);
 
     const kickMember = useCallback((teamId: string, memberId: string) => {
         if (!user) return;
@@ -419,6 +678,10 @@ function App() {
         ));
 
         updateUserById(memberId, { teamId: null });
+
+        setChannels(prev => prev.map(c => 
+            c.id === teamId ? { ...c, participantIds: c.participantIds.filter(id => id !== memberId) } : c
+        ));
     }, [user, teams, updateUserById]);
 
     const leaveTeam = useCallback((teamId: string) => {
@@ -434,6 +697,10 @@ function App() {
         ));
 
         updateUser({ teamId: null });
+
+        setChannels(prev => prev.map(c => 
+            c.id === teamId ? { ...c, participantIds: c.participantIds.filter(id => id !== user.id) } : c
+        ));
     }, [user, teams, updateUser]);
 
     const disbandTeam = useCallback((teamId: string) => {
@@ -453,7 +720,109 @@ function App() {
         });
 
         setTeams(prev => prev.filter(t => t.id !== teamId));
+        setChannels(prev => prev.filter(c => c.id !== teamId));
     }, [user, teams, updateUser, updateUserById]);
+
+    const joinWithCode = useCallback((inviteCode: string): Match | null => {
+      if (!user) return null;
+      const match = matches.find(m => m.inviteCode === inviteCode && m.status === MatchStatus.LOBBY);
+      if (!match) {
+        alert("Invalid or expired invite code.");
+        return null;
+      }
+      
+      const maxTeamSize = match.teamSize === MatchTeamSize.SOLO ? 1 : 5;
+      if (match.teamA.length + match.teamB.length >= maxTeamSize * 2) {
+        alert("Lobby is full.");
+        return null;
+      }
+      
+      if (user.credits < match.wager) {
+        alert("Insufficient funds.");
+        return null;
+      }
+      
+      const teamToJoin = match.teamA.length > match.teamB.length ? 'B' : 'A';
+      joinTeam(match.id, teamToJoin);
+      
+      return matches.find(m => m.id === match.id) || match; // Return updated match
+    }, [user, matches, joinTeam]);
+
+    const inviteToLobby = useCallback((matchId: string, inviteeId: string) => {
+      if (!user) return;
+      const invitee = allUsers.find(u => u.id === inviteeId);
+      if (!invitee) return;
+
+      const newNotification: Notification = {
+        id: `notif-lobby-${matchId}-${inviteeId}`,
+        type: NotificationType.MATCH_LOBBY_INVITE,
+        message: 'has invited you to a private match!',
+        timestamp: new Date().toISOString(),
+        read: false,
+        sender: user,
+        linkTo: `/lobby/${matchId}`,
+      };
+      setNotifications(prev => [newNotification, ...prev]);
+    }, [user, allUsers]);
+
+    const readyUp = useCallback((matchId: string) => {
+      if (!user) return;
+      updateMatch(matchId, {
+        readyPlayers: [...(matches.find(m => m.id === matchId)?.readyPlayers || []), user.id]
+      });
+    }, [user, matches, updateMatch]);
+
+    const startPrivateMatch = useCallback((matchId: string) => {
+      if (!user) return;
+      const match = matches.find(m => m.id === matchId);
+      if (!match) return;
+
+      const totalPlayers = match.teamA.length + match.teamB.length;
+      const requiredPlayers = (match.teamSize === MatchTeamSize.SOLO ? 1 : 5) * 2;
+      
+      if (totalPlayers !== requiredPlayers || match.readyPlayers.length !== requiredPlayers) {
+        alert("Cannot start match: Lobby is not full or not all players are ready.");
+        return;
+      }
+      
+      updateMatch(matchId, { status: MatchStatus.IN_PROGRESS });
+    }, [user, matches, updateMatch]);
+
+    const handleCompleteOnboarding = useCallback((selectedGameIds: string[]) => {
+      updateUser({
+        primaryGames: selectedGameIds,
+        hasCompletedOnboarding: true,
+      });
+      setGameSelectionModalOpen(false);
+    }, [updateUser]);
+    
+    useEffect(() => {
+    const interval = setInterval(() => {
+        const now = new Date();
+        matches.forEach(match => {
+            if ((match.status === MatchStatus.DISPUTED || match.status === MatchStatus.AWAITING_OPPONENT_EVIDENCE) && match.disputeDetails && new Date(match.disputeDetails.deadline) < now) {
+                console.log(`Dispute deadline passed for match ${match.id}`);
+                const evidence = match.disputeDetails.playerEvidence;
+                const teamAPlayers = match.teamA;
+                const teamBPlayers = match.teamB;
+
+                const teamASubmitted = teamAPlayers.some(id => evidence[id]);
+                const teamBSubmitted = teamBPlayers.some(id => evidence[id]);
+                
+                if (teamASubmitted && !teamBSubmitted) {
+                    reportMatchResult(match.id, 'A');
+                } else if (!teamASubmitted && teamBSubmitted) {
+                    reportMatchResult(match.id, 'B');
+                } else { 
+                    resolveMatchAndUnlockPlayers(match.id, { status: MatchStatus.REFUNDED, winnerTeam: null });
+                }
+            }
+        });
+    }, 5000); // Check every 5 seconds for demo purposes
+
+    return () => clearInterval(interval);
+  }, [matches, reportMatchResult, resolveMatchAndUnlockPlayers]);
+
 
   const contextValue = {
     user,
@@ -479,6 +848,7 @@ function App() {
     markMessagesAsRead,
     reportMatchResult,
     disputeMatch,
+    submitDisputeEvidence,
     createTeam,
     inviteToTeam,
     acceptTeamInvite,
@@ -488,49 +858,25 @@ function App() {
     kickMember,
     leaveTeam,
     disbandTeam,
+    isInteractionLocked,
+    joinWithCode,
+    inviteToLobby,
+    readyUp,
+    startPrivateMatch,
   };
 
-  const AuthRoutes = () => (
-    <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/signup" element={<SignUpPage />} />
-      <Route path="/forgot-password" element={<ForgotPasswordPage />} />
-      <Route path="*" element={<Navigate to="/login" />} />
-    </Routes>
-  );
-
-  const AppRoutes = () => (
-    <div className="flex h-screen bg-gray-900">
-      <Sidebar isMobileOpen={isMobileSidebarOpen} setMobileOpen={setMobileSidebarOpen} />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <Header onMobileMenuClick={() => setMobileSidebarOpen(true)} />
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-900 p-6">
-          <Routes>
-            <Route path="/" element={<Navigate to="/dashboard" />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/matches" element={<MatchesPage />} />
-            <Route path="/matches/:matchId" element={<MatchDetailsPage />} />
-            <Route path="/search" element={<SearchPage />} />
-            <Route path="/users/:username" element={<UserProfilePage />} />
-            <Route path="/friends" element={<FriendsPage />} />
-            <Route path="/team" element={<TeamPage />} />
-            <Route path="/profile" element={<ProfilePage />} />
-            <Route path="/wallet" element={<WalletPage />} />
-            {user?.role === UserRole.ADMIN && (
-              <Route path="/admin/disputes" element={<AdminDisputesPage />} />
-            )}
-            <Route path="*" element={<Navigate to="/dashboard" />} />
-          </Routes>
-        </main>
-      </div>
-      <ChatWidget />
-    </div>
-  );
-
   return (
-    <AppContext.Provider value={contextValue}>
-      {user ? <AppRoutes /> : <AuthRoutes />}
-    </AppContext.Provider>
+    <ThemeProvider>
+      <AppContext.Provider value={contextValue}>
+        {user ? <AppLayout /> : <AuthLayout />}
+        {isGameSelectionModalOpen && (
+          <GameSelectionModal 
+            isOpen={isGameSelectionModalOpen}
+            onSave={handleCompleteOnboarding}
+          />
+        )}
+      </AppContext.Provider>
+    </ThemeProvider>
   );
 }
 

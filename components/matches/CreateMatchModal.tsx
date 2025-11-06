@@ -1,11 +1,9 @@
-
-
 import React, { useState } from 'react';
 import type { Match } from '../../types';
 import { GAMES } from '../../constants';
 import { MatchTeamSize, ServerRegion } from '../../types';
 import Button from '../ui/Button';
-import { X } from 'lucide-react';
+import { X, Lock, Globe } from 'lucide-react';
 import { useAppContext } from '../../hooks/useAppContext';
 
 interface CreateMatchModalProps {
@@ -15,13 +13,13 @@ interface CreateMatchModalProps {
 }
 
 const FormInput: React.FC<React.InputHTMLAttributes<HTMLInputElement>> = (props) => (
-    <input {...props} className="bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary w-full" />
+    <input {...props} className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary w-full" />
 );
 const FormSelect: React.FC<React.SelectHTMLAttributes<HTMLSelectElement>> = (props) => (
-    <select {...props} className="bg-gray-700 border border-gray-600 rounded-md py-2 px-3 text-white focus:outline-none focus:ring-2 focus:ring-brand-primary w-full" />
+    <select {...props} className="bg-gray-100 dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md py-2 px-3 text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-brand-primary w-full" />
 );
 const FormLabel: React.FC<{htmlFor: string; children: React.ReactNode}> = ({htmlFor, children}) => (
-    <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-400 mb-1">{children}</label>
+    <label htmlFor={htmlFor} className="block text-sm font-medium text-gray-600 dark:text-gray-400 mb-1">{children}</label>
 );
 
 
@@ -34,6 +32,7 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
     wager: 1.00,
     teamSize: MatchTeamSize.SOLO,
     region: ServerRegion.NA_EAST,
+    privacy: 'public' as 'public' | 'private',
   });
   const [isTeamMatch, setIsTeamMatch] = useState(false);
 
@@ -56,12 +55,20 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50">
-      <div className="bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md relative border border-gray-700">
-        <button onClick={onClose} className="absolute top-4 right-4 text-gray-400 hover:text-white">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl p-8 w-full max-w-md relative border border-gray-200 dark:border-gray-700">
+        <button onClick={onClose} className="absolute top-4 right-4 text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white">
           <X size={24} />
         </button>
-        <h2 className="text-2xl font-bold text-white mb-6">Create New Match</h2>
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-6">Create New Match</h2>
         <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <FormLabel htmlFor="privacy">Privacy</FormLabel>
+            <div className="grid grid-cols-2 gap-2 rounded-lg bg-gray-200 dark:bg-gray-700 p-1">
+                <button type="button" onClick={() => setFormData(p => ({...p, privacy: 'public'}))} className={`px-4 py-2 text-sm font-semibold rounded-md flex items-center justify-center transition-colors ${formData.privacy === 'public' ? 'bg-white dark:bg-gray-800 shadow text-gray-900 dark:text-white' : 'text-gray-500'}`}><Globe className="h-4 w-4 mr-2"/>Public</button>
+                <button type="button" onClick={() => setFormData(p => ({...p, privacy: 'private'}))} className={`px-4 py-2 text-sm font-semibold rounded-md flex items-center justify-center transition-colors ${formData.privacy === 'private' ? 'bg-white dark:bg-gray-800 shadow text-gray-900 dark:text-white' : 'text-gray-500'}`}><Lock className="h-4 w-4 mr-2"/>Private</button>
+            </div>
+          </div>
+
           <div>
             <FormLabel htmlFor="game">Game</FormLabel>
             <FormSelect id="game" name="game" value={formData.game} onChange={handleChange}>
@@ -93,9 +100,9 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
                     name="isTeamMatch"
                     checked={isTeamMatch}
                     onChange={(e) => setIsTeamMatch(e.target.checked)}
-                    className="h-4 w-4 rounded bg-gray-700 border-gray-600 text-brand-primary focus:ring-brand-primary"
+                    className="h-4 w-4 rounded bg-gray-200 dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-brand-primary focus:ring-brand-primary"
                 />
-                <label htmlFor="isTeamMatch" className="text-sm text-gray-300">
+                <label htmlFor="isTeamMatch" className="text-sm text-gray-700 dark:text-gray-300">
                     Create as a match for my team: <span className="font-bold">{userTeam.name}</span>
                 </label>
             </div>
@@ -103,7 +110,7 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
 
           <div className="pt-4 flex justify-end space-x-3">
             <Button type="button" variant="secondary" onClick={onClose}>Cancel</Button>
-            <Button type="submit">Create Match</Button>
+            <Button type="submit">{formData.privacy === 'private' ? 'Create Private Lobby' : 'Create Public Match'}</Button>
           </div>
         </form>
       </div>
