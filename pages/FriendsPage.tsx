@@ -1,5 +1,3 @@
-
-
 import React, { useState, useMemo, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Card from '../components/ui/Card';
@@ -12,7 +10,7 @@ import PresenceIndicator from '../components/ui/PresenceIndicator';
 type Tab = 'friends' | 'incoming' | 'sent';
 
 const UserCard: React.FC<{ user: User, children?: React.ReactNode }> = ({ user, children }) => {
-    // FIX: Calculate and display overall ELO instead of the ELO object, and avoid division by zero.
+    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
     const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
     return (
     <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg space-y-3 sm:space-y-0">

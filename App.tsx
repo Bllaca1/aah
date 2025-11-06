@@ -10,11 +10,12 @@ import MatchDetailsPage from './pages/MatchDetailsPage';
 import LoginPage from './pages/LoginPage';
 import SignUpPage from './pages/SignUpPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
-import AdminDisputesPage from './pages/AdminDisputesPage';
+import StaffDisputesPage from './pages/StaffDisputesPage';
+import StaffDashboardPage from './pages/StaffDashboardPage';
 import TeamPage from './pages/TeamPage';
 import { AppContext } from './context/AppContext';
 import { MOCK_MATCHES, ALL_MOCK_USERS, MOCK_NOTIFICATIONS, MOCK_CHANNELS, MOCK_MESSAGES, MOCK_TEAMS, GAMES } from './constants';
-import type { User, Match, Notification, ChatChannel, ChatMessage, Team, DisputeEvidence } from './types';
+import type { User, Match, Notification, ChatChannel, ChatMessage, Team, DisputeEvidence, AccountStatus } from './types';
 import { UserRole, MatchTeamSize, MatchStatus, NotificationType, ServerRegion, ChannelType } from './types';
 import SearchPage from './pages/SearchPage';
 import UserProfilePage from './pages/UserProfilePage';
@@ -24,6 +25,10 @@ import { useAppContext } from './hooks/useAppContext';
 import { ThemeProvider } from './context/ThemeContext';
 import LobbyPage from './pages/LobbyPage';
 import GameSelectionModal from './components/onboarding/GameSelectionModal';
+import StaffDisputeReviewPage from './pages/StaffDisputeReviewPage';
+import BannedPage from './pages/BannedPage';
+import StaffUsersPage from './pages/StaffUsersPage';
+import StaffUserDetailsPage from './pages/StaffUserDetailsPage';
 
 
 const AuthLayout = () => (
@@ -32,13 +37,39 @@ const AuthLayout = () => (
       <Route path="/login" element={<LoginPage />} />
       <Route path="/signup" element={<SignUpPage />} />
       <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+      <Route path="/banned" element={<BannedPage />} />
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   </div>
 );
 
-const AppLayout = () => {
+const ProtectedRoute: React.FC<{ allowedRoles: UserRole[]; children: React.ReactNode }> = ({ allowedRoles, children }) => {
   const { user } = useAppContext();
+  
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!allowedRoles.includes(user.role)) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
+  return <>{children}</>;
+};
+
+const StaffRoutes = () => (
+  <Routes>
+    <Route path="dashboard" element={<StaffDashboardPage />} />
+    <Route path="disputes" element={<StaffDisputesPage />} />
+    <Route path="disputes/:matchId" element={<StaffDisputeReviewPage />} />
+    <Route path="users" element={<StaffUsersPage />} />
+    <Route path="users/:userId" element={<StaffUserDetailsPage />} />
+    <Route path="/" element={<Navigate to="dashboard" replace />} />
+  </Routes>
+);
+
+
+const AppLayout = () => {
   const [isMobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   
   return (
@@ -59,9 +90,14 @@ const AppLayout = () => {
             <Route path="/team" element={<TeamPage />} />
             <Route path="/profile" element={<ProfilePage />} />
             <Route path="/wallet" element={<WalletPage />} />
-            {user?.role === UserRole.ADMIN && (
-              <Route path="/admin/disputes" element={<AdminDisputesPage />} />
-            )}
+            <Route
+              path="/staff/*"
+              element={
+                <ProtectedRoute allowedRoles={[UserRole.STAFF]}>
+                  <StaffRoutes />
+                </ProtectedRoute>
+              }
+            />
             <Route path="*" element={<Navigate to="/dashboard" />} />
           </Routes>
         </main>
@@ -83,14 +119,8 @@ function App() {
   const [isGameSelectionModalOpen, setGameSelectionModalOpen] = useState(false);
 
   const isInteractionLocked = useMemo(() => {
-    if (!user) return false;
-     if (user.isMatchmakingLocked) return true;
-
-    return matches.some(match =>
-        (match.status === MatchStatus.IN_PROGRESS || match.status === MatchStatus.DISPUTED || match.status === MatchStatus.AWAITING_ADMIN_REVIEW) &&
-        (match.teamA.includes(user.id) || match.teamB.includes(user.id))
-    );
-  }, [user, matches]);
+    return user?.isMatchmakingLocked || false;
+  }, [user]);
 
   const updateMatch = useCallback((matchId: string, updates: Partial<Match>) => {
     setMatches(prevMatches =>
@@ -137,6 +167,9 @@ function App() {
         });
     }, [matches, updateMatch, updateUserById, user, updateUser]);
 
+  const logout = useCallback(() => {
+    setUser(null);
+  }, []);
 
   const login = useCallback((loggedInUser: User) => {
     // For mock purposes: if user is new (from signup), add them to the list.
@@ -158,9 +191,6 @@ function App() {
     }
   }, []);
 
-  const logout = useCallback(() => {
-    setUser(null);
-  }, []);
   
   const markNotificationAsRead = useCallback((id: string) => {
     setNotifications(prev => prev.map(n => n.id === id ? {...n, read: true} : n));
@@ -279,6 +309,13 @@ function App() {
 
         if (match.privacy === 'public' && newTeamA.length === maxTeamSize && newTeamB.length === maxTeamSize) {
             updates.status = MatchStatus.IN_PROGRESS;
+            const playersToLock = [...newTeamA, ...newTeamB];
+            playersToLock.forEach(playerId => {
+                updateUserById(playerId, { isMatchmakingLocked: true });
+                if (user.id === playerId) {
+                    updateUser({ isMatchmakingLocked: true });
+                }
+            });
         }
 
         updateMatch(matchId, updates);
@@ -288,7 +325,7 @@ function App() {
             ? { ...c, participantIds: [...c.participantIds, user.id] } 
             : c
         ));
-    }, [user, matches, updateUser, updateMatch, isInteractionLocked]);
+    }, [user, matches, updateUser, updateMatch, isInteractionLocked, updateUserById]);
 
   const reportMatchResult = useCallback((matchId: string, winningTeam: 'A' | 'B') => {
     const match = matches.find(m => m.id === matchId);
@@ -786,7 +823,15 @@ function App() {
       }
       
       updateMatch(matchId, { status: MatchStatus.IN_PROGRESS });
-    }, [user, matches, updateMatch]);
+
+      const playersToLock = [...match.teamA, ...match.teamB];
+      playersToLock.forEach(playerId => {
+          updateUserById(playerId, { isMatchmakingLocked: true });
+          if (user.id === playerId) {
+              updateUser({ isMatchmakingLocked: true });
+          }
+      });
+    }, [user, matches, updateMatch, updateUser, updateUserById]);
 
     const handleCompleteOnboarding = useCallback((selectedGameIds: string[]) => {
       updateUser({
@@ -795,6 +840,61 @@ function App() {
       });
       setGameSelectionModalOpen(false);
     }, [updateUser]);
+
+    const banUser = useCallback((userId: string, reason: string, duration: '24_hours' | '7_days' | '30_days' | 'permanent') => {
+        const userToBan = allUsers.find(u => u.id === userId);
+        if (!userToBan) return;
+
+        let ban_expires_at: string | null = null;
+        let accountStatus: 'suspended' | 'banned' = 'suspended';
+
+        if (duration === 'permanent') {
+            accountStatus = 'banned';
+        } else {
+            const now = new Date();
+            let hoursToAdd = 24;
+            if (duration === '7_days') hoursToAdd = 7 * 24;
+            if (duration === '30_days') hoursToAdd = 30 * 24;
+
+            now.setHours(now.getHours() + hoursToAdd);
+            ban_expires_at = now.toISOString();
+        }
+        
+        updateUserById(userId, {
+            accountStatus,
+            ban_reason: reason,
+            ban_expires_at,
+        });
+
+        if (user?.id === userId) {
+            logout();
+        }
+    }, [allUsers, updateUserById, user, logout]);
+    
+    useEffect(() => {
+        if (user) {
+            if (user.accountStatus === 'banned') {
+                logout();
+                window.location.hash = '/banned';
+                return;
+            }
+
+            if (user.accountStatus === 'suspended') {
+                if (user.ban_expires_at && new Date(user.ban_expires_at) > new Date()) {
+                    logout();
+                    window.location.hash = '/banned';
+                    return;
+                } else if (user.ban_expires_at && new Date(user.ban_expires_at) <= new Date()) {
+                    // Ban expired, reactivate account
+                    updateUser({
+                        accountStatus: 'active',
+                        ban_reason: null,
+                        ban_expires_at: null,
+                    });
+                }
+            }
+        }
+    }, [user, logout, updateUser]);
     
     useEffect(() => {
     const interval = setInterval(() => {
@@ -863,6 +963,8 @@ function App() {
     inviteToLobby,
     readyUp,
     startPrivateMatch,
+    resolveMatchAndUnlockPlayers,
+    banUser,
   };
 
   return (

@@ -116,8 +116,8 @@ const ViewTeam: React.FC<{ team: Team }> = ({ team }) => {
                                     </div>
                                     <div>
                                         <p className="font-bold text-gray-900 dark:text-white group-hover:underline">{member.username}</p>
-                                        {/* FIX: Calculate and display overall ELO correctly, handling potential compile errors and division by zero. */}
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Overall ELO: {Object.values(member.elo).length > 0 ? Math.round(Object.values(member.elo).reduce((a, b) => a + Number(b), 0) / Object.values(member.elo).length) : 1500}</p>
+                                        {/* FIX: Explicitly type the accumulator and current value in the reduce function to prevent type errors. */}
+                                        <p className="text-sm text-gray-500 dark:text-gray-400">Overall ELO: {Object.values(member.elo).length > 0 ? Math.round(Object.values(member.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(member.elo).length) : 1500}</p>
                                     </div>
                                 </Link>
                                 <div className="flex items-center space-x-4">

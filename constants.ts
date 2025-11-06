@@ -42,6 +42,9 @@ export const MOCK_USER: User = {
   credits: 1250.50,
   role: UserRole.USER,
   status: UserStatus.ONLINE,
+  accountStatus: 'active',
+  ban_reason: null,
+  ban_expires_at: null,
   friends: ['user-003', 'user-004', 'user-002'],
   friendRequests: {
     sent: ['user-006'], // Sent to Olvi Miriam
@@ -60,20 +63,23 @@ export const MOCK_USER: User = {
   hasCompletedOnboarding: true,
 };
 
-export const MOCK_ADMIN_USER: User = {
+export const MOCK_STAFF_USER: User = {
   id: 'admin-001',
-  username: 'Admin',
+  username: 'StaffMember',
   avatarUrl: 'https://i.pravatar.cc/150?u=admin-001',
   elo: { fortnite: 9999, cs2: 9999, brawlhalla: 9999 },
   rating: 100,
   credits: 99999,
-  role: UserRole.ADMIN,
+  role: UserRole.STAFF,
   status: UserStatus.ONLINE,
-  email: 'admin@betduel.com',
+  accountStatus: 'active',
+  ban_reason: null,
+  ban_expires_at: null,
+  email: 'staff@betduel.com',
   friends: [],
   friendRequests: { sent: [], received: [] },
   linkedAccounts: {
-    discord: 'Admin#0001',
+    discord: 'Staff#0001',
   },
   teamId: null,
   teamInvites: [],
@@ -84,20 +90,20 @@ export const MOCK_ADMIN_USER: User = {
   hasCompletedOnboarding: true,
 };
 
-const MOCK_PLAYERS_DATA: Omit<User, 'role' | 'email'>[] = [
+const MOCK_PLAYERS_DATA: Omit<User, 'email'>[] = [
   { ...MOCK_USER },
-  { id: 'user-002', username: 'Betim Shaqiri', avatarUrl: 'https://i.pravatar.cc/150?u=betim-shaqiri', elo: { fortnite: 1900, cs2: 2050, brawlhalla: 1800 }, rating: 100, credits: 2000, status: UserStatus.ONLINE, friends: ['user-001'], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Betim#5678' }, teamId: 'team-002', teamInvites: [], goodSportRating: 80, totalMatchesRated: 82, isMatchmakingLocked: true, primaryGames: ['cs2', 'brawlhalla'], hasCompletedOnboarding: true },
-  { id: 'user-003', username: 'Shukri Haziri', avatarUrl: 'https://i.pravatar.cc/150?u=shukri-haziri', elo: { fortnite: 1750, cs2: 1680, brawlhalla: 1820 }, rating: 100, credits: 800, status: UserStatus.AWAY, friends: ['user-001'], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Shukri#9012' }, teamId: null, teamInvites: [], goodSportRating: 60, totalMatchesRated: 65, isMatchmakingLocked: false, primaryGames: ['brawlhalla'], hasCompletedOnboarding: true },
-  { id: 'user-004', username: 'Bledi Bllaca', avatarUrl: 'https://i.pravatar.cc/150?u=bledi-bllaca', elo: { fortnite: 2100, cs2: 1950, brawlhalla: 1900 }, rating: 100, credits: 5000, status: UserStatus.ONLINE, friends: ['user-001'], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Bledi#3456' }, teamId: 'team-001', teamInvites: [], goodSportRating: 110, totalMatchesRated: 112, isMatchmakingLocked: false, primaryGames: ['fortnite'], hasCompletedOnboarding: true },
-  { id: 'user-005', username: 'Ardi Bllaca', avatarUrl: 'https://i.pravatar.cc/150?u=ardi-bllaca', elo: { fortnite: 1650, cs2: 1720, brawlhalla: 1600 }, rating: 100, credits: 1500, status: UserStatus.OFFLINE, friends: [], friendRequests: { sent: ['user-001'], received: [] }, linkedAccounts: { discord: 'Ardi#1111' }, teamId: null, teamInvites: [], goodSportRating: 45, totalMatchesRated: 50, isMatchmakingLocked: false, primaryGames: ['cs2'], hasCompletedOnboarding: true },
-  { id: 'user-006', username: 'Olvi Miriam', avatarUrl: 'https://i.pravatar.cc/150?u=olvi-miriam', elo: { fortnite: 2250, cs2: 2400, brawlhalla: 2100 }, rating: 100, credits: 7500, status: UserStatus.ONLINE, friends: [], friendRequests: { sent: [], received: ['user-001'] }, linkedAccounts: { discord: 'Olvi#2222' }, teamId: 'team-002', teamInvites: [], goodSportRating: 95, totalMatchesRated: 100, isMatchmakingLocked: false, primaryGames: ['fortnite', 'cs2', 'brawlhalla'], hasCompletedOnboarding: true },
-  { id: 'user-007', username: 'ZeroCool', avatarUrl: 'https://i.pravatar.cc/150?u=user-007', elo: { fortnite: 1950, cs2: 1850, brawlhalla: 2000 }, rating: 100, credits: 3000, status: UserStatus.OFFLINE, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Zero#3333' }, teamId: null, teamInvites: [], goodSportRating: 88, totalMatchesRated: 90, isMatchmakingLocked: false, primaryGames: ['fortnite', 'brawlhalla'], hasCompletedOnboarding: true },
-  { id: 'user-008', username: 'Blitz', avatarUrl: 'https://i.pravatar.cc/150?u=user-008', elo: { fortnite: 1800, cs2: 1750, brawlhalla: 1850 }, rating: 100, credits: 1200, status: UserStatus.AWAY, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Blitz#4444' }, teamId: null, teamInvites: [], goodSportRating: 72, totalMatchesRated: 75, isMatchmakingLocked: false, primaryGames: ['cs2'], hasCompletedOnboarding: true },
-  { id: 'user-009', username: 'GhostRecon', avatarUrl: 'https://i.pravatar.cc/150?u=user-009', elo: { fortnite: 2050, cs2: 2100, brawlhalla: 1980 }, rating: 100, credits: 4000, status: UserStatus.ONLINE, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Ghost#7777' }, teamId: null, teamInvites: [], goodSportRating: 101, totalMatchesRated: 105, isMatchmakingLocked: false, primaryGames: ['fortnite', 'cs2'], hasCompletedOnboarding: true },
-  { id: 'user-010', username: 'Nightshade', avatarUrl: 'https://i.pravatar.cc/150?u=user-010', elo: { fortnite: 1980, cs2: 1990, brawlhalla: 1950 }, rating: 100, credits: 2500, status: UserStatus.ONLINE, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Night#8888' }, teamId: null, teamInvites: [], goodSportRating: 90, totalMatchesRated: 93, isMatchmakingLocked: false, primaryGames: ['cs2', 'brawlhalla'], hasCompletedOnboarding: true },
+  { id: 'user-002', username: 'Betim Shaqiri', avatarUrl: 'https://i.pravatar.cc/150?u=betim-shaqiri', elo: { fortnite: 1900, cs2: 2050, brawlhalla: 1800 }, rating: 100, credits: 2000, status: UserStatus.ONLINE, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: ['user-001'], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Betim#5678' }, teamId: 'team-002', teamInvites: [], goodSportRating: 80, totalMatchesRated: 82, isMatchmakingLocked: true, primaryGames: ['cs2', 'brawlhalla'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-003', username: 'Shukri Haziri', avatarUrl: 'https://i.pravatar.cc/150?u=shukri-haziri', elo: { fortnite: 1750, cs2: 1680, brawlhalla: 1820 }, rating: 100, credits: 800, status: UserStatus.AWAY, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: ['user-001'], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Shukri#9012' }, teamId: null, teamInvites: [], goodSportRating: 60, totalMatchesRated: 65, isMatchmakingLocked: false, primaryGames: ['brawlhalla'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-004', username: 'Bledi Bllaca', avatarUrl: 'https://i.pravatar.cc/150?u=bledi-bllaca', elo: { fortnite: 2100, cs2: 1950, brawlhalla: 1900 }, rating: 100, credits: 5000, status: UserStatus.ONLINE, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: ['user-001'], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Bledi#3456' }, teamId: 'team-001', teamInvites: [], goodSportRating: 110, totalMatchesRated: 112, isMatchmakingLocked: false, primaryGames: ['fortnite'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-005', username: 'Ardi Bllaca', avatarUrl: 'https://i.pravatar.cc/150?u=ardi-bllaca', elo: { fortnite: 1650, cs2: 1720, brawlhalla: 1600 }, rating: 100, credits: 1500, status: UserStatus.OFFLINE, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: [], friendRequests: { sent: ['user-001'], received: [] }, linkedAccounts: { discord: 'Ardi#1111' }, teamId: null, teamInvites: [], goodSportRating: 45, totalMatchesRated: 50, isMatchmakingLocked: false, primaryGames: ['cs2'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-006', username: 'Olvi Miriam', avatarUrl: 'https://i.pravatar.cc/150?u=olvi-miriam', elo: { fortnite: 2250, cs2: 2400, brawlhalla: 2100 }, rating: 100, credits: 7500, status: UserStatus.ONLINE, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: [], friendRequests: { sent: [], received: ['user-001'] }, linkedAccounts: { discord: 'Olvi#2222' }, teamId: 'team-002', teamInvites: [], goodSportRating: 95, totalMatchesRated: 100, isMatchmakingLocked: false, primaryGames: ['fortnite', 'cs2', 'brawlhalla'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-007', username: 'ZeroCool', avatarUrl: 'https://i.pravatar.cc/150?u=user-007', elo: { fortnite: 1950, cs2: 1850, brawlhalla: 2000 }, rating: 100, credits: 3000, status: UserStatus.OFFLINE, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Zero#3333' }, teamId: null, teamInvites: [], goodSportRating: 88, totalMatchesRated: 90, isMatchmakingLocked: false, primaryGames: ['fortnite', 'brawlhalla'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-008', username: 'Blitz', avatarUrl: 'https://i.pravatar.cc/150?u=user-008', elo: { fortnite: 1800, cs2: 1750, brawlhalla: 1850 }, rating: 100, credits: 1200, status: UserStatus.AWAY, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Blitz#4444' }, teamId: null, teamInvites: [], goodSportRating: 72, totalMatchesRated: 75, isMatchmakingLocked: false, primaryGames: ['cs2'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-009', username: 'GhostRecon', avatarUrl: 'https://i.pravatar.cc/150?u=user-009', elo: { fortnite: 2050, cs2: 2100, brawlhalla: 1980 }, rating: 100, credits: 4000, status: UserStatus.ONLINE, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Ghost#7777' }, teamId: null, teamInvites: [], goodSportRating: 101, totalMatchesRated: 105, isMatchmakingLocked: false, primaryGames: ['fortnite', 'cs2'], hasCompletedOnboarding: true, role: UserRole.USER },
+  { id: 'user-010', username: 'Nightshade', avatarUrl: 'https://i.pravatar.cc/150?u=user-010', elo: { fortnite: 1980, cs2: 1990, brawlhalla: 1950 }, rating: 100, credits: 2500, status: UserStatus.ONLINE, accountStatus: 'active', ban_reason: null, ban_expires_at: null, friends: [], friendRequests: { sent: [], received: [] }, linkedAccounts: { discord: 'Night#8888' }, teamId: null, teamInvites: [], goodSportRating: 90, totalMatchesRated: 93, isMatchmakingLocked: false, primaryGames: ['cs2', 'brawlhalla'], hasCompletedOnboarding: true, role: UserRole.USER },
 ];
 
-export const ALL_MOCK_USERS: User[] = Array.from(new Map([...MOCK_PLAYERS_DATA, MOCK_ADMIN_USER].map(user => [user.id, user as User])).values());
+export const ALL_MOCK_USERS: User[] = Array.from(new Map([...MOCK_PLAYERS_DATA, MOCK_STAFF_USER].map(user => [user.id, user as User])).values());
 
 
 export const MOCK_MATCHES: Match[] = [

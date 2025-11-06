@@ -40,6 +40,8 @@ interface AppContextType {
   inviteToLobby: (matchId: string, inviteeId: string) => void;
   readyUp: (matchId: string) => void;
   startPrivateMatch: (matchId: string) => void;
+  resolveMatchAndUnlockPlayers: (matchId: string, updates: Partial<Match>) => void;
+  banUser: (userId: string, reason: string, duration: '24_hours' | '7_days' | '30_days' | 'permanent') => void;
 }
 
 export const AppContext = createContext<AppContextType>({ 
@@ -81,4 +83,6 @@ export const AppContext = createContext<AppContextType>({
   inviteToLobby: () => {},
   readyUp: () => {},
   startPrivateMatch: () => {},
+  resolveMatchAndUnlockPlayers: () => {},
+  banUser: () => {},
 });

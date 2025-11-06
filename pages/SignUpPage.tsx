@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Swords } from 'lucide-react';
 import { useAppContext } from '../hooks/useAppContext';
-import { MOCK_USER } from '../constants';
 import Button from '../components/ui/Button';
-import { UserRole, UserStatus } from '../types';
+// FIX: Import User type to explicitly type newUser object.
+import { UserRole, UserStatus, type User } from '../types';
 
 const AuthInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
@@ -23,17 +23,24 @@ const SignUpPage = () => {
     const [username, setUsername] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
     const [error, setError] = useState('');
 
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
-        if (!username || !email || !password) {
+        if (!username || !email || !password || !confirmPassword) {
             setError('Please fill in all fields.');
             return;
         }
         
-        const newUser = {
+        if (password !== confirmPassword) {
+            setError('Passwords do not match.');
+            return;
+        }
+        
+        // FIX: Explicitly type newUser as User to ensure type compatibility.
+        const newUser: User = {
           id: `user-${Date.now()}`,
           username,
           email,
@@ -43,6 +50,9 @@ const SignUpPage = () => {
           credits: 100,
           role: UserRole.USER,
           status: UserStatus.ONLINE,
+          accountStatus: 'active',
+          ban_reason: null,
+          ban_expires_at: null,
           friends: [],
           friendRequests: { sent: [], received: [] },
           linkedAccounts: { discord: `${username}#0000` },
@@ -82,6 +92,10 @@ const SignUpPage = () => {
                         <div>
                             <AuthLabel htmlFor="password">Password</AuthLabel>
                             <AuthInput id="password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" />
+                        </div>
+                        <div>
+                            <AuthLabel htmlFor="confirm-password">Confirm Password</AuthLabel>
+                            <AuthInput id="confirm-password" name="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" />
                         </div>
                         {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
                         <div>

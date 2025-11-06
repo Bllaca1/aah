@@ -104,7 +104,7 @@ const DisputeCenter: React.FC<{ match: Match }> = ({ match }) => {
 
 // --- Team View ---
 const TeamPlayerCard: React.FC<{ user: User }> = ({ user }) => {
-    // FIX: Calculate and display overall ELO instead of the ELO object, and avoid division by zero.
+    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
     const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
     return (
     <Link to={`/users/${user.username}`} className="flex items-center space-x-3 p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg w-full max-w-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
@@ -172,7 +172,7 @@ const TeamDisplay: React.FC<{
 // --- 1v1 View ---
 const PlayerCard: React.FC<{ user: User }> = ({ user }) => {
     const { user: currentUser } = useAppContext();
-    // FIX: Calculate and display overall ELO instead of the ELO object, and avoid division by zero.
+    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
     const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
     return (
         <Link to={user.id === currentUser?.id ? '/profile' : `/users/${user.username}`} className="transition-transform duration-200 hover:scale-105 w-48 text-center">

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Swords } from 'lucide-react';
 import { useAppContext } from '../hooks/useAppContext';
-import { MOCK_USER, MOCK_ADMIN_USER } from '../constants';
+import { MOCK_USER, MOCK_STAFF_USER } from '../constants';
 import Button from '../components/ui/Button';
 
 const AuthInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
@@ -23,6 +23,15 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
 
+    const handleQuickLogin = (userType: 'user' | 'staff') => {
+        if (userType === 'staff') {
+            login(MOCK_STAFF_USER);
+        } else {
+            login(MOCK_USER);
+        }
+        navigate('/dashboard');
+    };
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         setError('');
@@ -32,8 +41,8 @@ const LoginPage = () => {
         }
         // Mock login
         console.log('Logging in with:', { email, password });
-        if (email === MOCK_ADMIN_USER.email) {
-            login(MOCK_ADMIN_USER);
+        if (email === MOCK_STAFF_USER.email) {
+            login(MOCK_STAFF_USER);
         } else {
             login(MOCK_USER);
         }
@@ -80,6 +89,26 @@ const LoginPage = () => {
                             Create an account
                         </Link>
                     </p>
+                    <div className="mt-6">
+                        <div className="relative">
+                            <div className="absolute inset-0 flex items-center">
+                                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
+                            </div>
+                            <div className="relative flex justify-center text-sm">
+                                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
+                                    Or quick login for testing
+                                </span>
+                            </div>
+                        </div>
+                        <div className="mt-4 grid grid-cols-1 gap-3">
+                            <Button variant="secondary" onClick={() => handleQuickLogin('user')}>
+                                Login as User ({MOCK_USER.username})
+                            </Button>
+                            <Button variant="secondary" onClick={() => handleQuickLogin('staff')}>
+                                Login as Staff ({MOCK_STAFF_USER.username})
+                            </Button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

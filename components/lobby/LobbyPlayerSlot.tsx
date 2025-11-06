@@ -19,7 +19,7 @@ const LobbyPlayerSlot: React.FC<LobbyPlayerSlotProps> = ({ user, isReady }) => {
     );
   }
 
-  // FIX: Calculate and display overall ELO instead of the ELO object, and avoid division by zero.
+  // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
   const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
 
   return (

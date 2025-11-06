@@ -38,9 +38,12 @@ const SidebarContent: React.FC<{ onLinkClick?: () => void }> = ({ onLinkClick })
                 <NavItem to="/team" icon={<Shield className="h-5 w-5" />} label="My Team" onClick={onLinkClick} />
                 <NavItem to="/profile" icon={<UserCircle className="h-5 w-5" />} label="Profile" onClick={onLinkClick} />
                 <NavItem to="/wallet" icon={<Wallet className="h-5 w-5" />} label="Wallet" onClick={onLinkClick} />
-                {user?.role === UserRole.ADMIN && (
+                {user?.role === UserRole.STAFF && (
                     <div className="pt-4 mt-4 border-t border-gray-300 dark:border-gray-700">
-                    <NavItem to="/admin/disputes" icon={<ShieldAlert className="h-5 w-5" />} label="Disputes" onClick={onLinkClick} />
+                      <p className="px-4 pt-2 pb-1 text-xs font-semibold text-gray-400 uppercase tracking-wider">Staff Panel</p>
+                      <NavItem to="/staff/dashboard" icon={<Shield className="h-5 w-5" />} label="Dashboard" onClick={onLinkClick} />
+                      <NavItem to="/staff/disputes" icon={<ShieldAlert className="h-5 w-5" />} label="Disputes" onClick={onLinkClick} />
+                      <NavItem to="/staff/users" icon={<Users className="h-5 w-5" />} label="User Management" onClick={onLinkClick} />
                     </div>
                 )}
                 </nav>

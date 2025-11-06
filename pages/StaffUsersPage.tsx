@@ -1,18 +1,18 @@
 import React, { useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
-import { Search, ShieldCheck, Star } from 'lucide-react';
+import { Search, ShieldCheck, Star, Users } from 'lucide-react';
 import Card from '../components/ui/Card';
 import type { User } from '../types';
 import PresenceIndicator from '../components/ui/PresenceIndicator';
+import { useAppContext } from '../hooks/useAppContext';
 
 const UserSearchResultCard: React.FC<{ user: User }> = ({ user }) => {
-    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
     const overallElo = Object.values(user.elo).length > 0
         ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length)
-        : 1500; // Default ELO
+        : 1500;
 
     return (
-    <Link to={`/users/${user.username}`} className="block hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-lg">
+    <Link to={`/staff/users/${user.id}`} className="block hover:bg-gray-100 dark:hover:bg-gray-700/50 transition-colors duration-200 rounded-lg">
         <Card className="!p-4 flex items-center space-x-4">
             <div className="relative flex-shrink-0">
                 <img src={user.avatarUrl} alt={user.username} className="w-16 h-16 rounded-full border-2 border-gray-300 dark:border-gray-600"/>
@@ -33,9 +33,9 @@ const UserSearchResultCard: React.FC<{ user: User }> = ({ user }) => {
 };
 
 
-function SearchPage() {
+function StaffUsersPage() {
     const [searchTerm, setSearchTerm] = useState('');
-    const { allUsers } = useAppContext(); // Using stateful user list
+    const { allUsers } = useAppContext();
 
     const filteredUsers = useMemo(() => {
         if (!searchTerm.trim()) {
@@ -49,8 +49,11 @@ function SearchPage() {
     return (
         <div className="space-y-6">
             <div>
-                <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Search Players</h1>
-                <p className="text-gray-500 dark:text-gray-400 mt-1">Find any player on the BetDuel platform.</p>
+                <h1 className="text-3xl font-bold text-gray-900 dark:text-white flex items-center">
+                    <Users className="h-8 w-8 mr-3 text-brand-primary" />
+                    User Management
+                </h1>
+                <p className="text-gray-500 dark:text-gray-400 mt-1">Find and manage any player on the platform.</p>
             </div>
             
             <div className="relative">
@@ -85,7 +88,4 @@ function SearchPage() {
         </div>
     );
 }
-
-// Import useAppContext to get the most up-to-date user data
-import { useAppContext } from '../hooks/useAppContext';
-export default SearchPage;
+export default StaffUsersPage;

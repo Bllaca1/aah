@@ -1,8 +1,8 @@
 import type { ComponentType } from 'react';
 
 export enum UserRole {
-  USER = 'USER',
-  ADMIN = 'ADMIN',
+  USER = 'user',
+  STAFF = 'staff',
 }
 
 export enum UserStatus {
@@ -10,6 +10,8 @@ export enum UserStatus {
     OFFLINE = 'offline',
     AWAY = 'away',
 }
+
+export type AccountStatus = 'active' | 'suspended' | 'banned';
 
 export interface User {
   id: string;
@@ -19,8 +21,11 @@ export interface User {
   rating: number;
   credits: number;
   email?: string;
-  role?: UserRole;
-  status: UserStatus;
+  role: UserRole;
+  status: UserStatus; // Presence status
+  accountStatus: AccountStatus;
+  ban_reason?: string | null;
+  ban_expires_at?: string | null; // ISO 8601 timestamp
   friends: string[];
   friendRequests: {
     sent: string[];
