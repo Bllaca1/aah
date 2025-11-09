@@ -17,8 +17,8 @@ const FriendSelectItem: React.FC<{
     isSelected: boolean;
     onToggle: (id: string) => void;
 }> = ({ friend, isSelected, onToggle }) => {
-    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
-    const overallElo = Object.values(friend.elo).length > 0 ? Math.round(Object.values(friend.elo).reduce((a, b) => a + b, 0) / Object.values(friend.elo).length) : 1500;
+    // Fix: Explicitly typed the `reduce` function's accumulator and current value to resolve a TypeScript error with arithmetic operations.
+    const overallElo = Object.values(friend.elo).length > 0 ? Math.round(Object.values(friend.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(friend.elo).length) : 1500;
     return (
     <div 
         onClick={() => onToggle(friend.id)}

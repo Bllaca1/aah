@@ -7,11 +7,13 @@ import { MatchStatus } from '../types';
 import Button from '../components/ui/Button';
 import { Pencil, ThumbsUp, ShieldCheck } from 'lucide-react';
 import EditProfileModal from '../components/profile/EditProfileModal';
-import { GAMES } from '../constants';
+import { GAMES, PLATFORMS } from '../constants';
+import GameSelectionModal from '../components/onboarding/GameSelectionModal';
 
 function ProfilePage() {
     const { user, allUsers, matches, updateUser } = useAppContext();
     const [isEditModalOpen, setEditModalOpen] = useState(false);
+    const [isGameSelectionModalOpen, setGameSelectionModalOpen] = useState(false);
 
     if (!user) return <div>Loading profile...</div>;
 
@@ -20,6 +22,7 @@ function ProfilePage() {
     );
     
     const userPrimaryGames = useMemo(() => GAMES.filter(game => user.primaryGames?.includes(game.id)), [user.primaryGames]);
+    const userPlatforms = useMemo(() => PLATFORMS.filter(p => user.platforms?.includes(p.id)), [user.platforms]);
 
     const getMatchResult = (match: Match) => {
         if (match.status === MatchStatus.DISPUTED) return 'Disputed';
@@ -42,6 +45,11 @@ function ProfilePage() {
         updateUser(updatedUser);
         setEditModalOpen(false);
     };
+    
+    const handleGameSelectionSave = (selectedGameIds: string[]) => {
+        updateUser({ primaryGames: selectedGameIds });
+        setGameSelectionModalOpen(false);
+    };
 
     const goodSportPercentage = user.totalMatchesRated > 0 
         ? Math.round((user.goodSportRating / user.totalMatchesRated) * 100) 
@@ -60,6 +68,14 @@ function ProfilePage() {
                                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.username}</h1>
                                     <p className="text-gray-500 dark:text-gray-400">{user.linkedAccounts.discord}</p>
                                      <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+                                        {userPlatforms.map(platform => {
+                                            const PlatformIcon = platform.icon;
+                                            return (
+                                                <span key={platform.id} title={platform.name} className="bg-gray-600 dark:bg-gray-900 text-white text-xs font-semibold p-2 rounded-full flex items-center">
+                                                    <PlatformIcon className="h-4 w-4"/>
+                                                </span>
+                                            )
+                                        })}
                                         {userPrimaryGames.map(game => {
                                             const GameIcon = game.icon;
                                             return (
@@ -98,9 +114,15 @@ function ProfilePage() {
                 </Card>
                 
                 <Card>
-                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center">
-                        <ShieldCheck className="h-6 w-6 mr-3 text-brand-primary" />
-                        Game Ratings (ELO)
+                    <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4 flex items-center justify-between">
+                        <span className="flex items-center">
+                            <ShieldCheck className="h-6 w-6 mr-3 text-brand-primary" />
+                            Game Ratings (ELO)
+                        </span>
+                        <Button variant="secondary" onClick={() => setGameSelectionModalOpen(true)} className="!py-1 !px-2 !text-sm">
+                           <Pencil className="h-4 w-4 mr-2" />
+                           Edit Games
+                        </Button>
                     </h2>
                      {userPrimaryGames.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -176,6 +198,13 @@ function ProfilePage() {
                 onClose={() => setEditModalOpen(false)}
                 user={user}
                 onSave={handleProfileUpdate}
+            />
+            <GameSelectionModal
+                isOpen={isGameSelectionModalOpen}
+                onSave={handleGameSelectionSave}
+                onClose={() => setGameSelectionModalOpen(false)}
+                initialSelectedGames={user.primaryGames}
+                isEditing={true}
             />
         </>
     );

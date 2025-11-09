@@ -32,9 +32,8 @@ function Header({ onMobileMenuClick }: HeaderProps) {
 
   if (!user) return null;
 
-  // FIX: The previous explicit type annotations were causing a TypeScript error.
-  // By removing them, we allow TypeScript to correctly infer the types, which resolves the issue.
-  const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
+  // Fix: Explicitly typed the `reduce` function's accumulator and current value to resolve a TypeScript error with arithmetic operations.
+  const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(user.elo).length) : 1500;
 
   return (
     <header className="flex-shrink-0 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">

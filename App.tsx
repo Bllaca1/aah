@@ -16,7 +16,7 @@ import TeamPage from './pages/TeamPage';
 import { AppContext } from './context/AppContext';
 import { MOCK_MATCHES, ALL_MOCK_USERS, MOCK_NOTIFICATIONS, MOCK_CHANNELS, MOCK_MESSAGES, MOCK_TEAMS, GAMES } from './constants';
 import type { User, Match, Notification, ChatChannel, ChatMessage, Team, DisputeEvidence, AccountStatus } from './types';
-import { UserRole, MatchTeamSize, MatchStatus, NotificationType, ServerRegion, ChannelType } from './types';
+import { UserRole, MatchTeamSize, MatchStatus, NotificationType, ServerRegion, ChannelType, Platform } from './types';
 import SearchPage from './pages/SearchPage';
 import UserProfilePage from './pages/UserProfilePage';
 import FriendsPage from './pages/FriendsPage';
@@ -284,7 +284,15 @@ function App() {
         }
 
         const teamKey = team === 'A' ? 'teamA' : 'teamB';
-        const maxTeamSize = match.teamSize === MatchTeamSize.SOLO ? 1 : 5;
+        
+        const teamSizeMap: Record<MatchTeamSize, number> = {
+          [MatchTeamSize.SOLO]: 1,
+          [MatchTeamSize.DUO]: 2,
+          [MatchTeamSize.TRIO]: 3,
+          [MatchTeamSize.SQUAD]: 4,
+          [MatchTeamSize.TEAM]: 5,
+        };
+        const maxTeamSize = teamSizeMap[match.teamSize];
 
         if (match[teamKey].length >= maxTeamSize) {
             alert(`Team ${team} is already full.`);
@@ -679,6 +687,7 @@ function App() {
             wager: newMatchData.wager || 0,
             teamSize: newMatchData.teamSize || MatchTeamSize.SOLO,
             region: newMatchData.region || ServerRegion.NA_EAST,
+            platform: newMatchData.platform || Platform.PC,
             status: newMatchData.privacy === 'private' ? MatchStatus.LOBBY : MatchStatus.OPEN,
             elo: user.elo[game.id] || 1500,
             teamA: [user.id],
@@ -768,7 +777,14 @@ function App() {
         return null;
       }
       
-      const maxTeamSize = match.teamSize === MatchTeamSize.SOLO ? 1 : 5;
+      const teamSizeMap: Record<MatchTeamSize, number> = {
+          [MatchTeamSize.SOLO]: 1,
+          [MatchTeamSize.DUO]: 2,
+          [MatchTeamSize.TRIO]: 3,
+          [MatchTeamSize.SQUAD]: 4,
+          [MatchTeamSize.TEAM]: 5,
+      };
+      const maxTeamSize = teamSizeMap[match.teamSize];
       if (match.teamA.length + match.teamB.length >= maxTeamSize * 2) {
         alert("Lobby is full.");
         return null;
@@ -815,7 +831,14 @@ function App() {
       if (!match) return;
 
       const totalPlayers = match.teamA.length + match.teamB.length;
-      const requiredPlayers = (match.teamSize === MatchTeamSize.SOLO ? 1 : 5) * 2;
+      const teamSizeMap: Record<MatchTeamSize, number> = {
+          [MatchTeamSize.SOLO]: 1,
+          [MatchTeamSize.DUO]: 2,
+          [MatchTeamSize.TRIO]: 3,
+          [MatchTeamSize.SQUAD]: 4,
+          [MatchTeamSize.TEAM]: 5,
+      };
+      const requiredPlayers = teamSizeMap[match.teamSize] * 2;
       
       if (totalPlayers !== requiredPlayers || match.readyPlayers.length !== requiredPlayers) {
         alert("Cannot start match: Lobby is not full or not all players are ready.");

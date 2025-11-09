@@ -19,8 +19,8 @@ const LobbyPlayerSlot: React.FC<LobbyPlayerSlotProps> = ({ user, isReady }) => {
     );
   }
 
-  // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
-  const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
+  // Fix: Explicitly typed the `reduce` function's accumulator and current value to resolve a TypeScript error with arithmetic operations.
+  const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(user.elo).length) : 1500;
 
   return (
     <div className={`flex items-center justify-between p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg h-[60px] transition-all ${isReady ? 'ring-2 ring-green-500' : ''}`}>

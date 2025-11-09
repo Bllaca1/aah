@@ -105,35 +105,38 @@ const ViewTeam: React.FC<{ team: Team }> = ({ team }) => {
                 <Card>
                     <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-4">Team Roster</h2>
                     <div className="space-y-3">
-                        {members.map(member => (
-                            <div key={member.id} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-                                <Link to={member.id === user?.id ? `/profile` : `/users/${member.username}`} className="flex items-center space-x-4 group">
-                                    <div className="relative flex-shrink-0">
-                                        <img src={member.avatarUrl} alt={member.username} className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600 group-hover:border-brand-primary transition-colors"/>
-                                        <div className="absolute bottom-0 right-0">
-                                            <PresenceIndicator status={member.status} />
+                        {members.map(member => {
+                            // Fix: Explicitly typed the reduce function parameters to prevent a TypeScript error.
+                            const overallElo = Object.values(member.elo).length > 0 ? Math.round(Object.values(member.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(member.elo).length) : 1500;
+                            return (
+                                <div key={member.id} className="flex items-center justify-between p-3 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
+                                    <Link to={member.id === user?.id ? `/profile` : `/users/${member.username}`} className="flex items-center space-x-4 group">
+                                        <div className="relative flex-shrink-0">
+                                            <img src={member.avatarUrl} alt={member.username} className="w-12 h-12 rounded-full border-2 border-gray-300 dark:border-gray-600 group-hover:border-brand-primary transition-colors"/>
+                                            <div className="absolute bottom-0 right-0">
+                                                <PresenceIndicator status={member.status} />
+                                            </div>
                                         </div>
+                                        <div>
+                                            <p className="font-bold text-gray-900 dark:text-white group-hover:underline">{member.username}</p>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">Overall ELO: {overallElo}</p>
+                                        </div>
+                                    </Link>
+                                    <div className="flex items-center space-x-4">
+                                         {member.id === team.captainId && (
+                                            <span className="flex items-center text-xs font-semibold text-yellow-800 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded-full">
+                                                <Crown className="h-4 w-4 mr-1.5" /> Captain
+                                            </span>
+                                         )}
+                                         {isCaptain && member.id !== user?.id && (
+                                            <Button variant="danger" className="!px-2 !py-1" title="Kick Member" onClick={() => setConfirmation({type: 'kick', member})}>
+                                                <Trash2 className="h-4 w-4"/>
+                                            </Button>
+                                         )}
                                     </div>
-                                    <div>
-                                        <p className="font-bold text-gray-900 dark:text-white group-hover:underline">{member.username}</p>
-                                        {/* FIX: Explicitly type the accumulator and current value in the reduce function to prevent type errors. */}
-                                        <p className="text-sm text-gray-500 dark:text-gray-400">Overall ELO: {Object.values(member.elo).length > 0 ? Math.round(Object.values(member.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(member.elo).length) : 1500}</p>
-                                    </div>
-                                </Link>
-                                <div className="flex items-center space-x-4">
-                                     {member.id === team.captainId && (
-                                        <span className="flex items-center text-xs font-semibold text-yellow-800 dark:text-yellow-400 bg-yellow-100 dark:bg-yellow-900/50 px-2 py-1 rounded-full">
-                                            <Crown className="h-4 w-4 mr-1.5" /> Captain
-                                        </span>
-                                     )}
-                                     {isCaptain && member.id !== user?.id && (
-                                        <Button variant="danger" className="!px-2 !py-1" title="Kick Member" onClick={() => setConfirmation({type: 'kick', member})}>
-                                            <Trash2 className="h-4 w-4"/>
-                                        </Button>
-                                     )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
                     </div>
                 </Card>
                 

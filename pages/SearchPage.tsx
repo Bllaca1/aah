@@ -6,9 +6,9 @@ import type { User } from '../types';
 import PresenceIndicator from '../components/ui/PresenceIndicator';
 
 const UserSearchResultCard: React.FC<{ user: User }> = ({ user }) => {
-    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
+    // Fix: Explicitly typed the `reduce` function's accumulator and current value to resolve a TypeScript error with arithmetic operations.
     const overallElo = Object.values(user.elo).length > 0
-        ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length)
+        ? Math.round(Object.values(user.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(user.elo).length)
         : 1500; // Default ELO
 
     return (

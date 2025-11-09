@@ -7,7 +7,7 @@ import { MatchStatus, UserRole } from '../types';
 import Button from '../components/ui/Button';
 import { UserPlus, Check, MessageSquareWarning, Trash2, ThumbsUp, ShieldCheck, Ban } from 'lucide-react';
 import PresenceIndicator from '../components/ui/PresenceIndicator';
-import { GAMES } from '../constants';
+import { GAMES, PLATFORMS } from '../constants';
 import BanUserModal from '../components/staff/BanUserModal';
 
 function UserProfilePage() {
@@ -30,6 +30,7 @@ function UserProfilePage() {
     );
     
     const userPrimaryGames = useMemo(() => GAMES.filter(game => user.primaryGames?.includes(game.id)), [user.primaryGames]);
+    const userPlatforms = useMemo(() => PLATFORMS.filter(p => user.platforms?.includes(p.id)), [user.platforms]);
 
     const getMatchResult = (match: Match, currentUser: User) => {
         if (match.status === MatchStatus.DISPUTED) return 'Disputed';
@@ -110,6 +111,14 @@ function UserProfilePage() {
                                     <h1 className="text-2xl font-bold text-gray-900 dark:text-white">{user.username}</h1>
                                     <p className="text-gray-500 dark:text-gray-400">{user.linkedAccounts.discord}</p>
                                     <div className="mt-4 flex flex-wrap gap-2 justify-center sm:justify-start">
+                                         {userPlatforms.map(platform => {
+                                            const PlatformIcon = platform.icon;
+                                            return (
+                                                <span key={platform.id} title={platform.name} className="bg-gray-600 dark:bg-gray-900 text-white text-xs font-semibold p-2 rounded-full flex items-center">
+                                                    <PlatformIcon className="h-4 w-4"/>
+                                                </span>
+                                            )
+                                        })}
                                         {userPrimaryGames.map(game => {
                                             const GameIcon = game.icon;
                                             return (

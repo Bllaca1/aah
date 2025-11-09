@@ -131,12 +131,18 @@ function StaffUserDetailsPage() {
                     </h2>
                     {userPrimaryGames.length > 0 ? (
                         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            {userPrimaryGames.map(game => (
-                                <div key={game.id} className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg">
-                                    <p className="text-sm text-gray-500 dark:text-gray-400">{game.name}</p>
-                                    <p className="text-2xl font-bold text-gray-900 dark:text-white">{user.elo[game.id] || 1500}</p>
-                                </div>
-                            ))}
+                            {userPrimaryGames.map(game => {
+                                const GameIcon = game.icon;
+                                return (
+                                    <div key={game.id} className="p-4 bg-gray-100 dark:bg-gray-700/50 rounded-lg flex items-center space-x-4">
+                                        {GameIcon && <GameIcon className="h-8 w-8 text-gray-600 dark:text-gray-400 flex-shrink-0" />}
+                                        <div>
+                                            <p className="text-sm text-gray-500 dark:text-gray-400">{game.name}</p>
+                                            <p className="text-2xl font-bold text-gray-900 dark:text-white">{user.elo[game.id] || 1500}</p>
+                                        </div>
+                                    </div>
+                                );
+                            })}
                         </div>
                     ) : (
                         <p className="text-gray-500 dark:text-gray-400 text-center py-4">This player hasn't selected their primary games yet.</p>

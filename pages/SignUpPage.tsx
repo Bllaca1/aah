@@ -3,8 +3,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Swords } from 'lucide-react';
 import { useAppContext } from '../hooks/useAppContext';
 import Button from '../components/ui/Button';
-// FIX: Import User type to explicitly type newUser object.
-import { UserRole, UserStatus, type User } from '../types';
+// Fix: Import User type to explicitly type newUser object.
+import { UserRole, UserStatus, type User, Platform } from '../types';
+import { GAMES } from '../constants';
 
 const AuthInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
@@ -39,13 +40,18 @@ const SignUpPage = () => {
             return;
         }
         
-        // FIX: Explicitly type newUser as User to ensure type compatibility.
+        const initialElo = GAMES.reduce((acc, game) => {
+            acc[game.id] = 1500;
+            return acc;
+        }, {} as { [gameId: string]: number });
+
+        // Fix: Explicitly type newUser as User to ensure type compatibility.
         const newUser: User = {
           id: `user-${Date.now()}`,
           username,
           email,
           avatarUrl: `https://i.pravatar.cc/150?u=${username}`,
-          elo: { fortnite: 1500, cs2: 1500, brawlhalla: 1500 },
+          elo: initialElo,
           rating: 100,
           credits: 100,
           role: UserRole.USER,
@@ -63,6 +69,7 @@ const SignUpPage = () => {
           isMatchmakingLocked: false,
           hasCompletedOnboarding: false,
           primaryGames: [],
+          platforms: [],
         };
 
         login(newUser);

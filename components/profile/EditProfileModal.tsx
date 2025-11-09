@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import type { User } from '../../types';
+import { Platform } from '../../types';
 import Button from '../ui/Button';
 import { X, Upload } from 'lucide-react';
+import { PLATFORMS } from '../../constants';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -26,6 +28,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
     cs2: user.linkedAccounts.cs2 || '',
     brawlhalla: user.linkedAccounts.brawlhalla || '',
   });
+  const [selectedPlatforms, setSelectedPlatforms] = useState<Platform[]>(user.platforms || []);
 
   const avatarInputRef = useRef<HTMLInputElement>(null);
 
@@ -39,6 +42,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
         cs2: user.linkedAccounts.cs2 || '',
         brawlhalla: user.linkedAccounts.brawlhalla || '',
       });
+      setSelectedPlatforms(user.platforms || []);
     }
   }, [isOpen, user]);
   
@@ -47,6 +51,12 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+  
+  const handleTogglePlatform = (platform: Platform) => {
+    setSelectedPlatforms(prev => 
+      prev.includes(platform) ? prev.filter(p => p !== platform) : [...prev, platform]
+    );
   };
 
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,6 +80,7 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
     const updatedUser: Partial<User> = {
         username: formData.username,
         avatarUrl: formData.avatarUrl,
+        platforms: selectedPlatforms,
         linkedAccounts: {
             discord: formData.discord,
             fortnite: formData.fortnite,
@@ -118,6 +129,27 @@ const EditProfileModal: React.FC<EditProfileModalProps> = ({ isOpen, onClose, us
                 <div>
                   <FormLabel htmlFor="username">Username</FormLabel>
                   <FormInput id="username" name="username" type="text" value={formData.username} onChange={handleChange} required />
+                </div>
+
+                <div>
+                    <FormLabel>My Platforms</FormLabel>
+                    <div className="flex flex-wrap gap-2 mt-2">
+                    {PLATFORMS.map(({ id, name, icon: Icon }) => (
+                        <button
+                        type="button"
+                        key={id}
+                        onClick={() => handleTogglePlatform(id)}
+                        className={`flex items-center px-3 py-2 rounded-md text-sm font-medium transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-brand-primary focus:ring-offset-2 focus:ring-offset-white dark:focus:ring-offset-gray-800 ${
+                            selectedPlatforms.includes(id)
+                            ? 'bg-brand-primary text-white shadow-md'
+                            : 'bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600'
+                        }`}
+                        >
+                        <Icon className="h-4 w-4 mr-2" />
+                        {name}
+                        </button>
+                    ))}
+                    </div>
                 </div>
                 
                 <div className="pt-2">

@@ -76,7 +76,14 @@ function LobbyPage() {
     const teamBPlayers = match.teamB.map(id => allUsers.find(u => u.id === id)).filter(Boolean) as User[];
     const teamAData = teams.find(t => t.id === match.teamAId);
 
-    const maxTeamSize = match.teamSize === MatchTeamSize.SOLO ? 1 : 5;
+    const teamSizeMap: Record<MatchTeamSize, number> = {
+        [MatchTeamSize.SOLO]: 1,
+        [MatchTeamSize.DUO]: 2,
+        [MatchTeamSize.TRIO]: 3,
+        [MatchTeamSize.SQUAD]: 4,
+        [MatchTeamSize.TEAM]: 5,
+    };
+    const maxTeamSize = teamSizeMap[match.teamSize];
     const isLobbyFull = teamAPlayers.length + teamBPlayers.length === maxTeamSize * 2;
     const areAllReady = isLobbyFull && (match.readyPlayers.length === maxTeamSize * 2);
 

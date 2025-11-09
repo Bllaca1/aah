@@ -6,6 +6,7 @@ import { Coins, AlertTriangle, Clock } from 'lucide-react';
 import { useAppContext } from '../../hooks/useAppContext';
 import { MatchTeamSize, MatchStatus } from '../../types';
 import PresenceIndicator from '../ui/PresenceIndicator';
+import { PLATFORMS } from '../../constants';
 
 // Simple time ago function
 const timeAgo = (dateString: string) => {
@@ -44,6 +45,8 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
 
     const GameIcon = match.game.icon;
     const creator = allUsers.find(u => u.id === match.teamA[0]);
+    const platformInfo = PLATFORMS.find(p => p.id === match.platform);
+    const PlatformIcon = platformInfo?.icon;
 
     const renderPlayer = (player: User | null) => {
         const content = (
@@ -147,8 +150,21 @@ const MatchCard: React.FC<MatchCardProps> = ({ match, onViewClick }) => {
                 
                 <div className="flex-grow flex flex-col justify-center items-center my-2">
                     {renderMatchup()}
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center">
-                        <span>{match.teamSize} &bull; {match.region} &bull; ELO: {match.elo}</span>
+                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-3 text-center flex justify-center items-center flex-wrap gap-x-2">
+                        <span>{match.teamSize}</span>
+                        <span className="text-gray-300 dark:text-gray-600">&bull;</span>
+                        <span>{match.region}</span>
+                        <span className="text-gray-300 dark:text-gray-600">&bull;</span>
+                        <span>ELO: {match.elo}</span>
+                         {platformInfo && (
+                            <>
+                                <span className="text-gray-300 dark:text-gray-600">&bull;</span>
+                                <span className="flex items-center">
+                                    {PlatformIcon && <PlatformIcon className="h-4 w-4 mr-1"/>}
+                                    {platformInfo.name}
+                                </span>
+                            </>
+                        )}
                     </div>
                 </div>
                 

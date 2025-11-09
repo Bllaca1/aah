@@ -1,12 +1,15 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { GAMES } from '../../constants';
 import type { Game } from '../../types';
 import Button from '../ui/Button';
-import { CheckCircle } from 'lucide-react';
+import { CheckCircle, X } from 'lucide-react';
 
 interface GameSelectionModalProps {
   isOpen: boolean;
   onSave: (selectedGameIds: string[]) => void;
+  initialSelectedGames?: string[];
+  onClose?: () => void;
+  isEditing?: boolean;
 }
 
 const GameCard: React.FC<{ game: Game; isSelected: boolean; onSelect: () => void }> = ({ game, isSelected, onSelect }) => (
@@ -26,8 +29,14 @@ const GameCard: React.FC<{ game: Game; isSelected: boolean; onSelect: () => void
   </div>
 );
 
-const GameSelectionModal: React.FC<GameSelectionModalProps> = ({ isOpen, onSave }) => {
-  const [selectedGames, setSelectedGames] = useState<string[]>([]);
+const GameSelectionModal: React.FC<GameSelectionModalProps> = ({ isOpen, onSave, initialSelectedGames = [], onClose, isEditing = false }) => {
+  const [selectedGames, setSelectedGames] = useState<string[]>(initialSelectedGames);
+
+  useEffect(() => {
+    if (isOpen) {
+      setSelectedGames(initialSelectedGames);
+    }
+  }, [isOpen, initialSelectedGames]);
 
   const handleToggleGame = (gameId: string) => {
     setSelectedGames(prev =>
@@ -44,9 +53,14 @@ const GameSelectionModal: React.FC<GameSelectionModalProps> = ({ isOpen, onSave 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4">
       <div className="bg-white dark:bg-gray-800 rounded-lg shadow-xl w-full max-w-2xl border border-gray-200 dark:border-gray-700 flex flex-col max-h-[90vh]">
-        <div className="p-6 text-center border-b border-gray-200 dark:border-gray-700">
-          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">Select Your Games</h2>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">Choose the games you primarily play. This will customize your profile.</p>
+        <div className="p-6 text-center border-b border-gray-200 dark:border-gray-700 relative">
+          {isEditing && onClose && (
+            <button onClick={onClose} className="absolute top-4 right-4 p-1 rounded-full text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-700">
+              <X size={24} />
+            </button>
+          )}
+          <h2 className="text-3xl font-bold text-gray-900 dark:text-white">{isEditing ? 'Edit Your Games' : 'Select Your Games'}</h2>
+          <p className="text-gray-500 dark:text-gray-400 mt-2">{isEditing ? 'Update the games you primarily play.' : 'Choose the games you primarily play. This will customize your profile.'}</p>
         </div>
         <div className="p-6 overflow-y-auto">
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
@@ -63,7 +77,7 @@ const GameSelectionModal: React.FC<GameSelectionModalProps> = ({ isOpen, onSave 
         <div className="p-6 bg-gray-50 dark:bg-gray-900/50 border-t border-gray-200 dark:border-gray-700 flex justify-center">
           <Button
             onClick={handleSave}
-            disabled={selectedGames.length === 0}
+            disabled={!isEditing && selectedGames.length === 0}
             className="w-full max-w-xs py-3 text-base"
           >
             Save Selection

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import type { Match } from '../../types';
-import { GAMES } from '../../constants';
-import { MatchTeamSize, ServerRegion } from '../../types';
+import { GAMES, PLATFORMS } from '../../constants';
+import { MatchTeamSize, ServerRegion, Platform } from '../../types';
 import Button from '../ui/Button';
 import { X, Lock, Globe } from 'lucide-react';
 import { useAppContext } from '../../hooks/useAppContext';
@@ -33,6 +33,7 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
     teamSize: MatchTeamSize.SOLO,
     region: ServerRegion.NA_EAST,
     privacy: 'public' as 'public' | 'private',
+    platform: Platform.PC,
   });
   const [isTeamMatch, setIsTeamMatch] = useState(false);
 
@@ -47,7 +48,7 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
     e.preventDefault();
     const newMatchData = {
         ...formData,
-        teamAId: isTeamMatch && formData.teamSize === MatchTeamSize.TEAM ? userTeam?.id : undefined,
+        teamAId: isTeamMatch && formData.teamSize !== MatchTeamSize.SOLO ? userTeam?.id : undefined,
         game: { id: formData.game } // The create function expects a game object, not just id
     };
     onCreate(newMatchData as any);
@@ -75,6 +76,12 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
               {GAMES.map(game => <option key={game.id} value={game.id}>{game.name}</option>)}
             </FormSelect>
           </div>
+           <div>
+            <FormLabel htmlFor="platform">Platform</FormLabel>
+            <FormSelect id="platform" name="platform" value={formData.platform} onChange={handleChange}>
+              {PLATFORMS.map(platform => <option key={platform.id} value={platform.id}>{platform.name}</option>)}
+            </FormSelect>
+          </div>
           <div>
             <FormLabel htmlFor="wager">Wager (Credits)</FormLabel>
             <FormInput id="wager" name="wager" type="number" min="0.20" step="0.01" value={formData.wager} onChange={handleChange} required />
@@ -92,7 +99,7 @@ const CreateMatchModal: React.FC<CreateMatchModalProps> = ({ isOpen, onClose, on
             </FormSelect>
           </div>
 
-          {userTeam && formData.teamSize === MatchTeamSize.TEAM && (
+          {userTeam && formData.teamSize !== MatchTeamSize.SOLO && (
             <div className="flex items-center space-x-2 pt-2">
                 <input 
                     type="checkbox"

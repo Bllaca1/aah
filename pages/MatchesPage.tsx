@@ -10,6 +10,7 @@ import JoinMatchModal from '../components/matches/JoinMatchModal';
 import { PlusCircle, KeyRound } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import JoinWithCodeModal from '../components/matches/JoinWithCodeModal';
+import { GAMES } from '../constants';
 
 function MatchesPage() {
     const { matches, createMatch, isInteractionLocked } = useAppContext();
@@ -20,15 +21,18 @@ function MatchesPage() {
         teamSize: 'all',
         region: 'all',
         wager: 'all',
+        platform: 'all',
     });
     
     const [isCreateModalOpen, setCreateModalOpen] = useState(false);
     const [isJoinCodeModalOpen, setJoinCodeModalOpen] = useState(false);
     const [matchToJoin, setMatchToJoin] = useState<Match | null>(null);
+    const [backgroundImage, setBackgroundImage] = useState('');
 
     const filteredMatches = useMemo(() => {
         return matches.filter((match) => {
             if (filters.game !== 'all' && match.game.id !== filters.game) return false;
+            if (filters.platform !== 'all' && match.platform !== filters.platform) return false;
             if (filters.teamSize !== 'all' && match.teamSize !== filters.teamSize) return false;
             if (filters.region !== 'all' && match.region !== filters.region) return false;
             
@@ -51,6 +55,14 @@ function MatchesPage() {
 
     const handleFilterChange = (newFilters: any) => {
         setFilters(newFilters);
+        if (newFilters.game === 'all') {
+            setBackgroundImage('');
+        } else {
+            const selectedGame = GAMES.find(g => g.id === newFilters.game);
+            if (selectedGame) {
+                setBackgroundImage(selectedGame.imageUrl);
+            }
+        }
     };
     
     const handleCreateMatch = (newMatchData: Partial<Match>) => {
@@ -70,65 +82,79 @@ function MatchesPage() {
     };
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Match Lobby</h1>
-                    <p className="text-gray-500 dark:text-gray-400 mt-1">Find your next challenge or create your own.</p>
+        <div className="relative isolate">
+             <div 
+                className="absolute inset-0 -z-10 h-full w-full bg-cover bg-center transition-opacity duration-700"
+                style={{ 
+                    backgroundImage: backgroundImage ? `url(${backgroundImage})` : 'none', 
+                    opacity: backgroundImage ? 1 : 0 
+                }}
+                aria-hidden="true"
+            />
+            <div 
+                className="absolute inset-0 -z-10 h-full w-full bg-gradient-to-b from-gray-100/80 to-gray-100 dark:from-gray-900/90 dark:to-gray-900"
+                aria-hidden="true"
+            />
+            <div className="space-y-6">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Match Lobby</h1>
+                        <p className="text-gray-500 dark:text-gray-400 mt-1">Find your next challenge or create your own.</p>
+                    </div>
+                    <div className="flex space-x-2">
+                        <Button 
+                            variant="secondary"
+                            onClick={() => setJoinCodeModalOpen(true)}
+                        >
+                            <KeyRound className="h-5 w-5 mr-2" />
+                            Join with Code
+                        </Button>
+                        <Button 
+                            onClick={() => setCreateModalOpen(true)}
+                            disabled={isInteractionLocked}
+                            title={isInteractionLocked ? "Complete your active match or dispute before creating a new one." : "Create Match"}
+                        >
+                            <PlusCircle className="h-5 w-5 mr-2" />
+                            Create Match
+                        </Button>
+                    </div>
                 </div>
-                <div className="flex space-x-2">
-                    <Button 
-                        variant="secondary"
-                        onClick={() => setJoinCodeModalOpen(true)}
-                    >
-                        <KeyRound className="h-5 w-5 mr-2" />
-                        Join with Code
-                    </Button>
-                    <Button 
-                        onClick={() => setCreateModalOpen(true)}
-                        disabled={isInteractionLocked}
-                        title={isInteractionLocked ? "Complete your active match or dispute before creating a new one." : "Create Match"}
-                    >
-                        <PlusCircle className="h-5 w-5 mr-2" />
-                        Create Match
-                    </Button>
-                </div>
-            </div>
-            
-            <MatchFilters onChange={handleFilterChange} />
+                
+                <MatchFilters onChange={handleFilterChange} />
 
-            {filteredMatches.length > 0 ? (
-                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-                    {filteredMatches.map((match: Match) => (
-                        <MatchCard 
-                            key={match.id} 
-                            match={match} 
-                            onViewClick={handleViewClick} 
-                        />
-                    ))}
-                </div>
-            ) : (
-                <div className="text-center py-16 bg-gray-200 dark:bg-gray-800 rounded-lg">
-                    <p className="text-gray-500 dark:text-gray-400">No open matches found with the current filters.</p>
-                </div>
-            )}
-            
-            <CreateMatchModal
-                isOpen={isCreateModalOpen}
-                onClose={() => setCreateModalOpen(false)}
-                onCreate={handleCreateMatch}
-            />
-            <JoinWithCodeModal
-                isOpen={isJoinCodeModalOpen}
-                onClose={() => setJoinCodeModalOpen(false)}
-            />
-            {matchToJoin && (
-                <JoinMatchModal 
-                    isOpen={!!matchToJoin}
-                    onClose={() => setMatchToJoin(null)}
-                    match={matchToJoin}
+                {filteredMatches.length > 0 ? (
+                    <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                        {filteredMatches.map((match: Match) => (
+                            <MatchCard 
+                                key={match.id} 
+                                match={match} 
+                                onViewClick={handleViewClick} 
+                            />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-16 bg-gray-200/80 dark:bg-gray-800/80 rounded-lg backdrop-blur-sm">
+                        <p className="text-gray-500 dark:text-gray-400">No open matches found with the current filters.</p>
+                    </div>
+                )}
+                
+                <CreateMatchModal
+                    isOpen={isCreateModalOpen}
+                    onClose={() => setCreateModalOpen(false)}
+                    onCreate={handleCreateMatch}
                 />
-            )}
+                <JoinWithCodeModal
+                    isOpen={isJoinCodeModalOpen}
+                    onClose={() => setJoinCodeModalOpen(false)}
+                />
+                {matchToJoin && (
+                    <JoinMatchModal 
+                        isOpen={!!matchToJoin}
+                        onClose={() => setMatchToJoin(null)}
+                        match={matchToJoin}
+                    />
+                )}
+            </div>
         </div>
     );
 }

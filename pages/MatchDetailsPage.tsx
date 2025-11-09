@@ -9,6 +9,7 @@ import type { User, Team, Match } from '../types';
 import Modal from '../components/ui/Modal';
 import MatchChat from '../components/chat/MatchChat';
 import CountdownTimer from '../components/disputes/CountdownTimer';
+import { PLATFORMS } from '../constants';
 
 
 // --- Dispute Center Component ---
@@ -104,8 +105,8 @@ const DisputeCenter: React.FC<{ match: Match }> = ({ match }) => {
 
 // --- Team View ---
 const TeamPlayerCard: React.FC<{ user: User }> = ({ user }) => {
-    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
-    const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
+    // Fix: Explicitly typed the `reduce` function's accumulator and current value to resolve a TypeScript error with arithmetic operations.
+    const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(user.elo).length) : 1500;
     return (
     <Link to={`/users/${user.username}`} className="flex items-center space-x-3 p-2 bg-gray-100 dark:bg-gray-700/50 rounded-lg w-full max-w-xs hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
         <img src={user.avatarUrl} alt={user.username} className="w-10 h-10 rounded-full" />
@@ -172,8 +173,8 @@ const TeamDisplay: React.FC<{
 // --- 1v1 View ---
 const PlayerCard: React.FC<{ user: User }> = ({ user }) => {
     const { user: currentUser } = useAppContext();
-    // FIX: Removed explicit types from reduce callback to allow TypeScript to infer them correctly, resolving an arithmetic operation error.
-    const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a, b) => a + b, 0) / Object.values(user.elo).length) : 1500;
+    // Fix: Explicitly typed the `reduce` function's accumulator and current value to resolve a TypeScript error with arithmetic operations.
+    const overallElo = Object.values(user.elo).length > 0 ? Math.round(Object.values(user.elo).reduce((a: number, b: number) => a + b, 0) / Object.values(user.elo).length) : 1500;
     return (
         <Link to={user.id === currentUser?.id ? '/profile' : `/users/${user.username}`} className="transition-transform duration-200 hover:scale-105 w-48 text-center">
              <img src={user.avatarUrl} alt={user.username} className="w-32 h-32 rounded-full border-4 border-gray-300 dark:border-gray-700 mx-auto" />
@@ -220,6 +221,15 @@ function MatchDetailsPage() {
             </div>
         );
     }
+    
+    const teamSizeMap: Record<MatchTeamSize, number> = {
+        [MatchTeamSize.SOLO]: 1,
+        [MatchTeamSize.DUO]: 2,
+        [MatchTeamSize.TRIO]: 3,
+        [MatchTeamSize.SQUAD]: 4,
+        [MatchTeamSize.TEAM]: 5,
+    };
+    const maxTeamSize = teamSizeMap[match.teamSize];
     
     const isPlayerInMatch = [...match.teamA, ...match.teamB].includes(user.id);
     const userTeam = match.teamA.includes(user.id) ? 'A' : match.teamB.includes(user.id) ? 'B' : null;
@@ -282,6 +292,9 @@ function MatchDetailsPage() {
     
     const isDisputed = [MatchStatus.DISPUTED, MatchStatus.AWAITING_ADMIN_REVIEW, MatchStatus.AWAITING_OPPONENT_EVIDENCE].includes(match.status);
     const isPlayerLockedForThisMatch = isDisputed && isPlayerInMatch && user.isMatchmakingLocked;
+    const platformInfo = PLATFORMS.find(p => p.id === match.platform);
+    const PlatformIcon = platformInfo?.icon;
+
 
     return (
         <div className="space-y-6">
@@ -302,7 +315,22 @@ function MatchDetailsPage() {
             <Card>
                 <div className="text-center mb-6">
                     <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{match.game.name} Match</h1>
-                    <p className="text-gray-500 dark:text-gray-400">{match.teamSize} &bull; {match.region} &bull; ELO: {match.elo}</p>
+                    <div className="flex justify-center items-center flex-wrap gap-x-3 text-gray-500 dark:text-gray-400 mt-1">
+                        <span>{match.teamSize}</span>
+                        <span>&bull;</span>
+                        <span>{match.region}</span>
+                        <span>&bull;</span>
+                        <span>ELO: {match.elo}</span>
+                         {platformInfo && (
+                            <>
+                                <span>&bull;</span>
+                                <span className="flex items-center gap-x-1.5">
+                                    {PlatformIcon && <PlatformIcon className="h-4 w-4" />}
+                                    {platformInfo.name}
+                                </span>
+                            </>
+                        )}
+                    </div>
                 </div>
 
                 {match.teamSize === MatchTeamSize.SOLO ? (
@@ -325,7 +353,7 @@ function MatchDetailsPage() {
                             players={teamAPlayers} 
                             teamData={teamAData}
                             teamName="A" 
-                            maxTeamSize={5} 
+                            maxTeamSize={maxTeamSize} 
                             matchId={match.id}
                             isPlayerInMatch={isPlayerInMatch}
                             status={match.status}
@@ -345,7 +373,7 @@ function MatchDetailsPage() {
                             players={teamBPlayers} 
                             teamData={teamBData}
                             teamName="B" 
-                            maxTeamSize={5} 
+                            maxTeamSize={maxTeamSize} 
                             matchId={match.id}
                             isPlayerInMatch={isPlayerInMatch}
                             status={match.status}

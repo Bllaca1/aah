@@ -13,6 +13,13 @@ export enum UserStatus {
 
 export type AccountStatus = 'active' | 'suspended' | 'banned';
 
+export enum Platform {
+    PC = 'PC',
+    PLAYSTATION = 'PlayStation',
+    XBOX = 'Xbox',
+    MOBILE = 'Mobile',
+}
+
 export interface User {
   id: string;
   username: string;
@@ -43,6 +50,7 @@ export interface User {
   totalMatchesRated: number; // Total number of matches where opponents could rate them
   isMatchmakingLocked: boolean;
   primaryGames: string[]; // IDs of games the user primarily plays
+  platforms: Platform[];
   hasCompletedOnboarding: boolean; // Flag to check if user has selected their games
 }
 
@@ -79,6 +87,9 @@ export enum MatchStatus {
 
 export enum MatchTeamSize {
     SOLO = '1v1',
+    DUO = '2v2',
+    TRIO = '3v3',
+    SQUAD = '4v4',
     TEAM = '5v5',
 }
 
@@ -122,6 +133,7 @@ export interface Match {
   privacy: 'public' | 'private';
   inviteCode?: string;
   readyPlayers: string[]; // User IDs of players who are ready
+  platform: Platform;
   disputeDetails?: DisputeDetails;
 }
 
