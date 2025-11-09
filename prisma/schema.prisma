@@ -1,0 +1,451 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum UserRole {
+  USER
+  STAFF
+}
+
+enum UserStatus {
+  ONLINE
+  OFFLINE
+  AWAY
+}
+
+enum AccountStatus {
+  ACTIVE
+  SUSPENDED
+  BANNED
+}
+
+enum Platform {
+  PC
+  PLAYSTATION
+  XBOX
+  MOBILE
+}
+
+enum MatchStatus {
+  LOBBY
+  OPEN
+  IN_PROGRESS
+  COMPLETED
+  DISPUTED
+  REFUNDED
+  AWAITING_ADMIN_REVIEW
+  AWAITING_OPPONENT_EVIDENCE
+}
+
+enum MatchTeamSize {
+  SOLO // 1v1
+  DUO  // 2v2
+  TRIO // 3v3
+  SQUAD // 4v4
+  TEAM  // 5v5
+}
+
+enum ServerRegion {
+  NA_EAST
+  NA_WEST
+  EU
+  ASIA
+}
+
+enum TransactionType {
+  DEPOSIT
+  WITHDRAWAL
+  MATCH_WIN
+  MATCH_LOSS
+  PLATFORM_FEE
+}
+
+enum TransactionStatus {
+  COMPLETED
+  PENDING
+  FAILED
+}
+
+enum NotificationType {
+  FRIEND_REQUEST
+  FRIEND_REQUEST_ACCEPTED
+  MATCH_INVITE
+  DISPUTE_UPDATE
+  BLOCKED_INTERACTION
+  GENERIC
+  TEAM_INVITE
+  TEAM_INVITE_ACCEPTED
+  MATCH_LOBBY_INVITE
+}
+
+enum ChannelType {
+  DM
+  MATCH
+  TEAM
+}
+
+// Models
+model User {
+  id                    String        @id @default(cuid())
+  username              String        @unique
+  email                 String?       @unique
+  avatarUrl             String
+  rating                Int           @default(100)
+  credits               Float         @default(0)
+  role                  UserRole      @default(USER)
+  status                UserStatus    @default(OFFLINE)
+  accountStatus         AccountStatus @default(ACTIVE)
+  banReason             String?
+  banExpiresAt          DateTime?
+  goodSportRating       Int           @default(0)
+  totalMatchesRated     Int           @default(0)
+  isMatchmakingLocked   Boolean       @default(false)
+  primaryGames          String[]
+  platforms             Platform[]
+  hasCompletedOnboarding Boolean      @default(false)
+  createdAt             DateTime      @default(now())
+  updatedAt             DateTime      @updatedAt
+
+  // Relations
+  profile               UserProfile?
+  elo                   UserElo[]
+  teamMemberships       TeamMember[]
+  captainOfTeams        Team[]        @relation("TeamCaptain")
+  matchPlayers          MatchPlayer[] @relation("MatchPlayers")
+  friendshipsInitiated  Friendship[]  @relation("UserFriendships")
+  friendshipsReceived   Friendship[]  @relation("FriendOfUser")
+  sentFriendRequests    FriendRequest[] @relation("SentFriendRequests")
+  receivedFriendRequests FriendRequest[] @relation("ReceivedFriendRequests")
+  sentTeamInvites       TeamInvite[]  @relation("SentTeamInvites")
+  receivedTeamInvites   TeamInvite[]  @relation("ReceivedTeamInvites")
+  transactions          Transaction[]
+  notifications         Notification[]
+  sentMessages          ChatMessage[]
+  channelParticipants   ChatChannel[] @relation("ChannelParticipants")
+  messageReads          MessageRead[]
+  disputesInitiated     Dispute[]     @relation("DisputeInitiator")
+  disputeEvidence       DisputeEvidence[]
+
+  @@index([username])
+  @@index([email])
+  @@index([role])
+  @@index([accountStatus])
+}
+
+model UserProfile {
+  id            String   @id @default(cuid())
+  userId        String   @unique
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  discordId     String?
+  fortniteId    String?
+  cs2Id         String?
+  brawlhallaId  String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Game {
+  id        String   @id
+  name      String   @unique
+  imageUrl  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  elo       UserElo[]
+  teamElo   TeamElo[]
+  matches   Match[]
+
+  @@index([name])
+}
+
+model UserElo {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  elo       Int      @default(1500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, gameId])
+  @@index([userId])
+  @@index([gameId])
+  @@index([elo])
+}
+
+model Team {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  tag       String   @unique
+  avatarUrl String
+  captainId String
+  captain   User     @relation("TeamCaptain", fields: [captainId], references: [id])
+  wins      Int      @default(0)
+  losses    Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  members       TeamMember[]
+  elo           TeamElo[]
+  matchesAsTeamA Match[]     @relation("MatchTeamA")
+  matchesAsTeamB Match[]     @relation("MatchTeamB")
+  invites       TeamInvite[]
+
+  @@index([name])
+  @@index([tag])
+  @@index([captainId])
+}
+
+model TeamMember {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  joinedAt  DateTime @default(now())
+
+  @@unique([teamId, userId])
+  @@index([teamId])
+  @@index([userId])
+}
+
+model TeamElo {
+  id        String   @id @default(cuid())
+  teamId    String
+  team      Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  gameId    String
+  game      Game     @relation(fields: [gameId], references: [id], onDelete: Cascade)
+  elo       Int      @default(1500)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([teamId, gameId])
+  @@index([teamId])
+  @@index([gameId])
+  @@index([elo])
+}
+
+model Match {
+  id             String        @id @default(cuid())
+  gameId         String
+  game           Game          @relation(fields: [gameId], references: [id])
+  wager          Float
+  teamSize       MatchTeamSize
+  region         ServerRegion
+  status         MatchStatus   @default(OPEN)
+  elo            Int
+  prizePool      Float
+  platform       Platform
+  privacy        String        @default("public")
+  inviteCode     String?       @unique
+  winnerTeam     String?       // 'A' or 'B'
+  teamAId        String?
+  teamA          Team?         @relation("MatchTeamA", fields: [teamAId], references: [id])
+  teamBId        String?
+  teamB          Team?         @relation("MatchTeamB", fields: [teamBId], references: [id])
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  // Relations
+  players        MatchPlayer[]
+  disputes       Dispute[]
+  chatChannel    ChatChannel?
+
+  @@index([gameId])
+  @@index([status])
+  @@index([region])
+  @@index([elo])
+  @@index([createdAt])
+}
+
+model MatchPlayer {
+  id                    String   @id @default(cuid())
+  matchId               String
+  match                 Match    @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  userId                String
+  user                  User     @relation("MatchPlayers", fields: [userId], references: [id], onDelete: Cascade)
+  team                  String   // 'A' or 'B'
+  isReady               Boolean  @default(false)
+  goodSportRatingGiven  Boolean  @default(false)
+  joinedAt              DateTime @default(now())
+
+  @@unique([matchId, userId])
+  @@index([matchId])
+  @@index([userId])
+  @@index([team])
+}
+
+model Dispute {
+  id              String    @id @default(cuid())
+  matchId         String
+  match           Match     @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  initiatorId     String
+  initiator       User      @relation("DisputeInitiator", fields: [initiatorId], references: [id])
+  deadline        DateTime
+  resolution      String?
+  resolvedBy      String?   // Admin user ID
+  resolvedAt      DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  // Relations
+  evidence        DisputeEvidence[]
+
+  @@index([matchId])
+  @@index([initiatorId])
+  @@index([deadline])
+}
+
+model DisputeEvidence {
+  id          String   @id @default(cuid())
+  disputeId   String
+  dispute     Dispute  @relation(fields: [disputeId], references: [id], onDelete: Cascade)
+  userId      String
+  user        User     @relation(fields: [userId], references: [id])
+  youtubeLink String
+  message     String   @db.Text
+  submittedAt DateTime @default(now())
+
+  @@index([disputeId])
+  @@index([userId])
+}
+
+model Friendship {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation("UserFriendships", fields: [userId], references: [id], onDelete: Cascade)
+  friendId  String
+  friend    User     @relation("FriendOfUser", fields: [friendId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@unique([userId, friendId])
+  @@index([userId])
+  @@index([friendId])
+}
+
+model FriendRequest {
+  id         String   @id @default(cuid())
+  senderId   String
+  sender     User     @relation("SentFriendRequests", fields: [senderId], references: [id], onDelete: Cascade)
+  receiverId String
+  receiver   User     @relation("ReceivedFriendRequests", fields: [receiverId], references: [id], onDelete: Cascade)
+  status     String   @default("pending") // pending, accepted, rejected
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([senderId, receiverId])
+  @@index([senderId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+model TeamInvite {
+  id         String   @id @default(cuid())
+  teamId     String
+  team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User     @relation("SentTeamInvites", fields: [senderId], references: [id])
+  receiverId String
+  receiver   User     @relation("ReceivedTeamInvites", fields: [receiverId], references: [id])
+  status     String   @default("pending") // pending, accepted, rejected
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@unique([teamId, receiverId])
+  @@index([teamId])
+  @@index([receiverId])
+  @@index([status])
+}
+
+model Transaction {
+  id        String            @id @default(cuid())
+  userId    String
+  user      User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      TransactionType
+  status    TransactionStatus
+  amount    Float
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
+
+  @@index([userId])
+  @@index([type])
+  @@index([status])
+  @@index([createdAt])
+}
+
+model Notification {
+  id        String           @id @default(cuid())
+  userId    String
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type      NotificationType
+  message   String           @db.Text
+  read      Boolean          @default(false)
+  linkTo    String?
+  senderId  String?
+  metadata  Json?
+  createdAt DateTime         @default(now())
+
+  @@index([userId])
+  @@index([read])
+  @@index([createdAt])
+}
+
+model ChatChannel {
+  id             String      @id @default(cuid())
+  type           ChannelType
+  matchId        String?     @unique
+  match          Match?      @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  participants   User[]      @relation("ChannelParticipants")
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  // Relations
+  messages       ChatMessage[]
+
+  @@index([type])
+  @@index([matchId])
+}
+
+model ChatMessage {
+  id        String   @id @default(cuid())
+  channelId String
+  channel   ChatChannel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+  senderId  String
+  sender    User     @relation(fields: [senderId], references: [id])
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+
+  // Relations
+  reads     MessageRead[]
+
+  @@index([channelId])
+  @@index([senderId])
+  @@index([createdAt])
+}
+
+model MessageRead {
+  id        String   @id @default(cuid())
+  messageId String
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  readAt    DateTime @default(now())
+
+  @@unique([messageId, userId])
+  @@index([messageId])
+  @@index([userId])
+}
