@@ -15,10 +15,11 @@ const app: Express = express();
 app.use(helmet());
 
 // CORS configuration
+const corsOrigin = process.env.CORS_ORIGIN || 'http://localhost:5173';
 app.use(
   cors({
-    origin: process.env.CORS_ORIGIN || '*',
-    credentials: true,
+    origin: corsOrigin,
+    credentials: corsOrigin !== '*',
   })
 );
 
