@@ -128,7 +128,8 @@ model User {
   sentTeamInvites       TeamInvite[]  @relation("SentTeamInvites")
   receivedTeamInvites   TeamInvite[]  @relation("ReceivedTeamInvites")
   transactions          Transaction[]
-  notifications         Notification[]
+  notifications         Notification[] @relation("ReceivedNotifications")
+  sentNotifications     Notification[] @relation("SentNotifications")
   sentMessages          ChatMessage[]
   channelParticipants   ChatChannel[] @relation("ChannelParticipants")
   messageReads          MessageRead[]
@@ -358,9 +359,9 @@ model TeamInvite {
   teamId     String
   team       Team     @relation(fields: [teamId], references: [id], onDelete: Cascade)
   senderId   String
-  sender     User     @relation("SentTeamInvites", fields: [senderId], references: [id])
+  sender     User     @relation("SentTeamInvites", fields: [senderId], references: [id], onDelete: Cascade)
   receiverId String
-  receiver   User     @relation("ReceivedTeamInvites", fields: [receiverId], references: [id])
+  receiver   User     @relation("ReceivedTeamInvites", fields: [receiverId], references: [id], onDelete: Cascade)
   status     String   @default("pending") // pending, accepted, rejected
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
@@ -390,16 +391,18 @@ model Transaction {
 model Notification {
   id        String           @id @default(cuid())
   userId    String
-  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User             @relation("ReceivedNotifications", fields: [userId], references: [id], onDelete: Cascade)
   type      NotificationType
   message   String           @db.Text
   read      Boolean          @default(false)
   linkTo    String?
   senderId  String?
+  sender    User?            @relation("SentNotifications", fields: [senderId], references: [id], onDelete: SetNull)
   metadata  Json?
   createdAt DateTime         @default(now())
 
   @@index([userId])
+  @@index([senderId])
   @@index([read])
   @@index([createdAt])
 }
