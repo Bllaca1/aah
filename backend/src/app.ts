@@ -7,6 +7,10 @@ import session from 'express-session';
 import dotenv from 'dotenv';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
+import matchesRouter from './routes/matches.js';
+import teamsRouter from './routes/teams.js';
+import usersRouter from './routes/users.js';
+import friendsRouter from './routes/friends.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authConfig } from './config/auth.js';
 
@@ -42,6 +46,10 @@ app.use(session(authConfig.session));
 // Routes
 app.use('/health', healthRouter);
 app.use('/auth', authRouter);
+app.use('/matches', matchesRouter);
+app.use('/teams', teamsRouter);
+app.use('/users', usersRouter);
+app.use('/friends', friendsRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
