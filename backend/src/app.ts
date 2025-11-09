@@ -1,16 +1,18 @@
+// Load environment variables FIRST before any other imports
+import dotenv from 'dotenv';
+dotenv.config();
+
+// Now import everything else after env vars are loaded
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
 import session from 'express-session';
-import dotenv from 'dotenv';
 import healthRouter from './routes/health.js';
 import authRouter from './routes/auth.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { authConfig } from './config/auth.js';
-
-dotenv.config();
 
 const app: Express = express();
 
