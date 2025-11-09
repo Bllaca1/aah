@@ -1,11 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Swords } from 'lucide-react';
-import { useAppContext } from '../hooks/useAppContext';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useRegister } from '../src/hooks/useAuthQuery';
+import { registerSchema, type RegisterFormData } from '../src/lib/validations/auth';
 import Button from '../components/ui/Button';
-// Fix: Import User type to explicitly type newUser object.
-import { UserRole, UserStatus, type User, Platform } from '../types';
-import { GAMES } from '../constants';
+import { Spinner } from '../src/components/ui/Spinner';
 
 const AuthInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
@@ -19,61 +20,26 @@ const AuthLabel: React.FC<{ htmlFor: string; children: React.ReactNode }> = ({ h
 );
 
 const SignUpPage = () => {
-    const { login } = useAppContext();
     const navigate = useNavigate();
-    const [username, setUsername] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
+    const registerMutation = useRegister();
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        if (!username || !email || !password || !confirmPassword) {
-            setError('Please fill in all fields.');
-            return;
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<RegisterFormData>({
+        resolver: zodResolver(registerSchema),
+    });
+
+    const onSubmit = async (data: RegisterFormData) => {
+        try {
+            // Remove confirmPassword from the data sent to API
+            const { confirmPassword, ...registerData } = data;
+            await registerMutation.mutateAsync(registerData);
+            navigate('/dashboard');
+        } catch (error) {
+            // Error is handled by the mutation hook with toast
         }
-        
-        if (password !== confirmPassword) {
-            setError('Passwords do not match.');
-            return;
-        }
-        
-        const initialElo = GAMES.reduce((acc, game) => {
-            acc[game.id] = 1500;
-            return acc;
-        }, {} as { [gameId: string]: number });
-
-        // Fix: Explicitly type newUser as User to ensure type compatibility.
-        const newUser: User = {
-          id: `user-${Date.now()}`,
-          username,
-          email,
-          avatarUrl: `https://i.pravatar.cc/150?u=${username}`,
-          elo: initialElo,
-          rating: 100,
-          credits: 100,
-          role: UserRole.USER,
-          status: UserStatus.ONLINE,
-          accountStatus: 'active',
-          ban_reason: null,
-          ban_expires_at: null,
-          friends: [],
-          friendRequests: { sent: [], received: [] },
-          linkedAccounts: { discord: `${username}#0000` },
-          teamId: null,
-          teamInvites: [],
-          goodSportRating: 0,
-          totalMatchesRated: 0,
-          isMatchmakingLocked: false,
-          hasCompletedOnboarding: false,
-          primaryGames: [],
-          platforms: [],
-        };
-
-        login(newUser);
-        navigate('/dashboard');
     };
 
     return (
@@ -87,27 +53,73 @@ const SignUpPage = () => {
                     <p className="text-gray-500 dark:text-gray-400">Create your account to start competing</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div>
                             <AuthLabel htmlFor="username">Username</AuthLabel>
-                            <AuthInput id="username" name="username" type="text" value={username} onChange={(e) => setUsername(e.target.value)} required autoComplete="username" />
+                            <AuthInput
+                                id="username"
+                                type="text"
+                                autoComplete="username"
+                                {...register('username')}
+                            />
+                            {errors.username && (
+                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                                    {errors.username.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <AuthLabel htmlFor="email">Email Address</AuthLabel>
-                            <AuthInput id="email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+                            <AuthInput
+                                id="email"
+                                type="email"
+                                autoComplete="email"
+                                {...register('email')}
+                            />
+                            {errors.email && (
+                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                                    {errors.email.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <AuthLabel htmlFor="password">Password</AuthLabel>
-                            <AuthInput id="password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="new-password" />
+                            <AuthInput
+                                id="password"
+                                type="password"
+                                autoComplete="new-password"
+                                {...register('password')}
+                            />
+                            {errors.password && (
+                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                                    {errors.password.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <AuthLabel htmlFor="confirm-password">Confirm Password</AuthLabel>
-                            <AuthInput id="confirm-password" name="confirm-password" type="password" value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} required autoComplete="new-password" />
+                            <AuthInput
+                                id="confirm-password"
+                                type="password"
+                                autoComplete="new-password"
+                                {...register('confirmPassword')}
+                            />
+                            {errors.confirmPassword && (
+                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                                    {errors.confirmPassword.message}
+                                </p>
+                            )}
                         </div>
-                        {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
                         <div>
-                            <Button type="submit" className="w-full">
-                                Create Account
+                            <Button type="submit" className="w-full" disabled={registerMutation.isPending}>
+                                {registerMutation.isPending ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Spinner size="sm" />
+                                        Creating account...
+                                    </span>
+                                ) : (
+                                    'Create Account'
+                                )}
                             </Button>
                         </div>
                     </form>
