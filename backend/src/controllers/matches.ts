@@ -358,6 +358,7 @@ export async function markReady(req: Request, res: Response) {
       where: { id: matchId },
       include: {
         players: true,
+        game: true,
       },
     });
 
@@ -427,7 +428,26 @@ export async function reportResult(req: Request, res: Response) {
       return res.status(404).json({ error: 'You are not in this match' });
     }
 
-    // Update match with result
+    // Distribute winnings BEFORE marking match as completed
+    const distributionResult = await distributeMatchWinnings(matchId, winningTeam);
+
+    if (!distributionResult.success) {
+      console.error('Failed to distribute winnings:', distributionResult.error);
+      return res.status(500).json({
+        error: 'Failed to distribute winnings',
+        details: distributionResult.error
+      });
+    }
+
+    // Update ELO ratings (non-critical, log errors but don't fail)
+    try {
+      await updateMatchElos(matchId, winningTeam);
+    } catch (error) {
+      console.error('Failed to update ELO ratings:', error);
+      // ELO update failure is logged but doesn't prevent match completion
+    }
+
+    // Update match with result (only after winnings successfully distributed)
     await prisma.match.update({
       where: { id: matchId },
       data: {
@@ -437,20 +457,6 @@ export async function reportResult(req: Request, res: Response) {
         teamBScore,
       },
     });
-
-    // Distribute winnings
-    const distributionResult = await distributeMatchWinnings(matchId, winningTeam);
-
-    if (!distributionResult.success) {
-      console.error('Failed to distribute winnings:', distributionResult.error);
-    }
-
-    // Update ELO ratings
-    try {
-      await updateMatchElos(matchId, winningTeam);
-    } catch (error) {
-      console.error('Failed to update ELO ratings:', error);
-    }
 
     // Notify all players
     const playerIds = match.players.map((p) => p.userId);
