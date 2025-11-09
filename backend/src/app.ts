@@ -3,9 +3,12 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import compression from 'compression';
+import session from 'express-session';
 import dotenv from 'dotenv';
-import healthRouter from './routes/health';
-import { errorHandler } from './middleware/errorHandler';
+import healthRouter from './routes/health.js';
+import authRouter from './routes/auth.js';
+import { errorHandler } from './middleware/errorHandler.js';
+import { authConfig } from './config/auth.js';
 
 dotenv.config();
 
@@ -33,8 +36,12 @@ app.use(express.urlencoded({ extended: true }));
 // Compression middleware
 app.use(compression());
 
+// Session middleware
+app.use(session(authConfig.session));
+
 // Routes
 app.use('/health', healthRouter);
+app.use('/auth', authRouter);
 
 // 404 handler
 app.use((req: Request, res: Response) => {
