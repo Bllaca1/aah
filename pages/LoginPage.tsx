@@ -1,9 +1,12 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Swords } from 'lucide-react';
-import { useAppContext } from '../hooks/useAppContext';
-import { MOCK_USER, MOCK_STAFF_USER } from '../constants';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useLogin } from '../src/hooks/useAuthQuery';
+import { loginSchema, type LoginFormData } from '../src/lib/validations/auth';
 import Button from '../components/ui/Button';
+import { Spinner } from '../src/components/ui/Spinner';
 
 const AuthInput = (props: React.InputHTMLAttributes<HTMLInputElement>) => (
     <input
@@ -17,36 +20,24 @@ const AuthLabel: React.FC<{ htmlFor: string; children: React.ReactNode }> = ({ h
 );
 
 const LoginPage = () => {
-    const { login } = useAppContext();
     const navigate = useNavigate();
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
+    const loginMutation = useLogin();
 
-    const handleQuickLogin = (userType: 'user' | 'staff') => {
-        if (userType === 'staff') {
-            login(MOCK_STAFF_USER);
-        } else {
-            login(MOCK_USER);
-        }
-        navigate('/dashboard');
-    };
+    const {
+        register,
+        handleSubmit,
+        formState: { errors },
+    } = useForm<LoginFormData>({
+        resolver: zodResolver(loginSchema),
+    });
 
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        setError('');
-        if (!email || !password) {
-            setError('Please enter email and password.');
-            return;
+    const onSubmit = async (data: LoginFormData) => {
+        try {
+            await loginMutation.mutateAsync(data);
+            navigate('/dashboard');
+        } catch (error) {
+            // Error is handled by the mutation hook with toast
         }
-        // Mock login
-        console.log('Logging in with:', { email, password });
-        if (email === MOCK_STAFF_USER.email) {
-            login(MOCK_STAFF_USER);
-        } else {
-            login(MOCK_USER);
-        }
-        navigate('/dashboard');
     };
 
     return (
@@ -60,16 +51,35 @@ const LoginPage = () => {
                     <p className="text-gray-500 dark:text-gray-400">Log in to your account</p>
                 </div>
                 <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg p-8">
-                    <form onSubmit={handleSubmit} className="space-y-6">
+                    <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                         <div>
                             <AuthLabel htmlFor="email">Email Address</AuthLabel>
-                            <AuthInput id="email" name="email" type="email" value={email} onChange={(e) => setEmail(e.target.value)} required autoComplete="email" />
+                            <AuthInput
+                                id="email"
+                                type="email"
+                                autoComplete="email"
+                                {...register('email')}
+                            />
+                            {errors.email && (
+                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                                    {errors.email.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <AuthLabel htmlFor="password">Password</AuthLabel>
-                            <AuthInput id="password" name="password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} required autoComplete="current-password" />
+                            <AuthInput
+                                id="password"
+                                type="password"
+                                autoComplete="current-password"
+                                {...register('password')}
+                            />
+                            {errors.password && (
+                                <p className="mt-1 text-sm text-red-500 dark:text-red-400">
+                                    {errors.password.message}
+                                </p>
+                            )}
                         </div>
-                        {error && <p className="text-red-500 dark:text-red-400 text-sm">{error}</p>}
                         <div className="flex items-center justify-between">
                             <div className="text-sm">
                                 <Link to="/forgot-password" className="font-medium text-brand-primary hover:text-indigo-400">
@@ -78,8 +88,15 @@ const LoginPage = () => {
                             </div>
                         </div>
                         <div>
-                            <Button type="submit" className="w-full">
-                                Sign In
+                            <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
+                                {loginMutation.isPending ? (
+                                    <span className="flex items-center justify-center gap-2">
+                                        <Spinner size="sm" />
+                                        Signing in...
+                                    </span>
+                                ) : (
+                                    'Sign In'
+                                )}
                             </Button>
                         </div>
                     </form>
@@ -89,26 +106,6 @@ const LoginPage = () => {
                             Create an account
                         </Link>
                     </p>
-                    <div className="mt-6">
-                        <div className="relative">
-                            <div className="absolute inset-0 flex items-center">
-                                <div className="w-full border-t border-gray-300 dark:border-gray-600" />
-                            </div>
-                            <div className="relative flex justify-center text-sm">
-                                <span className="px-2 bg-white dark:bg-gray-800 text-gray-500 dark:text-gray-400">
-                                    Or quick login for testing
-                                </span>
-                            </div>
-                        </div>
-                        <div className="mt-4 grid grid-cols-1 gap-3">
-                            <Button variant="secondary" onClick={() => handleQuickLogin('user')}>
-                                Login as User ({MOCK_USER.username})
-                            </Button>
-                            <Button variant="secondary" onClick={() => handleQuickLogin('staff')}>
-                                Login as Staff ({MOCK_STAFF_USER.username})
-                            </Button>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
